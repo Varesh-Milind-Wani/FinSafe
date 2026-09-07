@@ -43,15 +43,27 @@ const formatDateKey = (date: Date) => {
 };
 
 const parseLocalDate = (value: string) => {
-  const date = value.includes("T")
-    ? new Date(value)
-    : new Date(`${value}T00:00:00`);
-
-  if (Number.isNaN(date.getTime())) {
+  try {
+    // If it's an ISO string with timezone (ends with Z or +/-HH:MM), parse directly
+    if (value.includes("T")) {
+      const date = new Date(value);
+      if (!Number.isNaN(date.getTime())) {
+        return date;
+      }
+    }
+    
+    // For YYYY-MM-DD format without time, treat as midnight local time
+    if (value.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      const date = new Date(`${value}T00:00:00`);
+      if (!Number.isNaN(date.getTime())) {
+        return date;
+      }
+    }
+    
+    return null;
+  } catch {
     return null;
   }
-
-  return date;
 };
 
 const createDailySeries = (

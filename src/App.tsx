@@ -224,6 +224,14 @@ const App = () => {
             }}
             onDelete={handleDeleteTransaction}
             onEdit={handleEditTransaction}
+            onImport={(importedTransactions) => {
+              const updatedUser: UserAccount = {
+                ...user,
+                transactions: [...importedTransactions, ...user.transactions],
+              };
+              updateUser(updatedUser);
+              setUser(updatedUser);
+            }}
           />
         ) : activePage === "analytics" ? (
           <Analytics user={user} />

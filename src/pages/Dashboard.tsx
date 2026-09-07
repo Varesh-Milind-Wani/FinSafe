@@ -131,8 +131,10 @@ const Dashboard = ({ user, onAdd }: Props) => {
       .filter((transaction) => transaction.type === "loss")
       .reduce((sum, transaction) => sum + transaction.amount, 0);
 
+    // Calculate balance from ALL transactions, not from cached currentBalance
+    // This ensures we always show the true balance based on transaction history
     const calculatedBalance = user.startingBalance + totalProfit - totalLoss;
-    const currentBalance = user.currentBalance ?? calculatedBalance;
+    const currentBalance = calculatedBalance;
     const netPerformance = currentBalance - user.startingBalance;
 
     const savingsPercentage =

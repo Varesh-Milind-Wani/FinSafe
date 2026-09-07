@@ -35,18 +35,15 @@ const normalizeUser = (user: UserAccount): UserAccount => ({
       : [];
     const transactions = Array.isArray(user.transactions)
       ? user.transactions.map((transaction) => {
-          const grossAmount = transaction.grossAmount ?? transaction.amount;
-          // Use stored costAmount if available, don't recalculate
-          const costAmount = transaction.costAmount ?? 0;
-          const amount = transaction.type === "profit"
-            ? grossAmount - costAmount
-            : grossAmount + costAmount;
+          // Preserve transaction as-is - don't recalculate amounts
+          // The amount field already contains the correct net amount
+          // grossAmount and costAmount are stored separately
           return {
             ...transaction,
-            amount,
-            price: grossAmount,
-            grossAmount,
-            costAmount,
+            amount: transaction.amount ?? 0,
+            price: transaction.price ?? transaction.grossAmount ?? transaction.amount ?? 0,
+            grossAmount: transaction.grossAmount ?? transaction.amount ?? 0,
+            costAmount: transaction.costAmount ?? 0,
           };
         })
       : [];

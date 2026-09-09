@@ -374,6 +374,30 @@ const Dashboard = ({ user, onAdd }: Props) => {
       close,
     ];
 
+    // Calculate EMA (Exponential Moving Average)
+    const calculateEMA = (prices: number[], period: number): Array<[number, number]> => {
+      if (prices.length < period) return [];
+      
+      const ema: Array<[number, number]> = [];
+      const multiplier = 2 / (period + 1);
+      
+      // Calculate SMA for first value
+      let sum = 0;
+      for (let i = 0; i < period; i++) {
+        sum += prices[i];
+      }
+      let emaValue = sum / period;
+      ema.push([period - 1, emaValue]);
+      
+      // Calculate EMA for remaining prices
+      for (let i = period; i < prices.length; i++) {
+        emaValue = prices[i] * multiplier + emaValue * (1 - multiplier);
+        ema.push([i, emaValue]);
+      }
+      
+      return ema;
+    };
+
     if (!transactions.length) {
       const createdAt = parseLocalDate(user.createdAt) ?? new Date();
 
@@ -575,6 +599,16 @@ const Dashboard = ({ user, onAdd }: Props) => {
 
     const latestPoint = candles[candles.length - 1];
 
+    // Extract close prices for EMA calculation
+    const closePrices = candles.map(c => c[4]);
+    
+    // Calculate EMA 9 and EMA 15 with timestamps
+    const ema9Prices = calculateEMA(closePrices, 9);
+    const ema15Prices = calculateEMA(closePrices, 15);
+    
+    const ema9Data = ema9Prices.map(([index, value]) => [candles[index][0], value]);
+    const ema15Data = ema15Prices.map(([index, value]) => [candles[index][0], value]);
+
     return {
       accessibility: { enabled: true },
       chart: {
@@ -728,6 +762,28 @@ const Dashboard = ({ user, onAdd }: Props) => {
             units: [["week", [1]], ["month", [1, 2, 3, 4, 6]]],
           },
         },
+        {
+          type: "line",
+          name: "EMA 9",
+          data: ema9Data,
+          color: "#a78bfa",
+          lineWidth: 1.5,
+          marker: { enabled: false },
+          tooltip: {
+            valueDecimals: 2,
+          },
+        },
+        {
+          type: "line",
+          name: "EMA 15",
+          data: ema15Data,
+          color: "#f97316",
+          lineWidth: 1.5,
+          marker: { enabled: false },
+          tooltip: {
+            valueDecimals: 2,
+          },
+        },
       ],
     };
   }, [formatMoney, user.createdAt, user.startingBalance, user.transactions]);
@@ -753,10 +809,10 @@ const Dashboard = ({ user, onAdd }: Props) => {
     chart: {
       type: "areaspline",
       backgroundColor: "transparent",
-      height: 280,
+      height: 320,
       style: { fontFamily: "Inter, system-ui, sans-serif" },
-      animation: { duration: 1400, easing: "easeOutCubic" } as Highcharts.AnimationOptionsObject,
-      spacing: [16, 16, 16, 16],
+      animation: { duration: 1800, easing: "easeOutQuart" } as Highcharts.AnimationOptionsObject,
+      spacing: [20, 20, 20, 20],
       borderRadius: 0,
     },
     title: { text: undefined },
@@ -772,11 +828,11 @@ const Dashboard = ({ user, onAdd }: Props) => {
     },
     xAxis: {
       type: "datetime",
-      lineColor: "rgba(59, 130, 246, 0.2)",
-      tickColor: "rgba(59, 130, 246, 0.2)",
+      lineColor: "rgba(59, 130, 246, 0.15)",
+      tickColor: "rgba(59, 130, 246, 0.15)",
       crosshair: {
-        width: 2,
-        color: "rgba(59, 130, 246, 0.5)",
+        width: 1.5,
+        color: "rgba(96, 165, 250, 0.5)",
         dashStyle: "Dash",
       },
       labels: {
@@ -786,17 +842,17 @@ const Dashboard = ({ user, onAdd }: Props) => {
           return date.toLocaleDateString("en-IN", { month: "short", day: "2-digit" });
         },
       },
-      gridLineWidth: 1,
-      gridLineColor: "rgba(30, 39, 56, 0.3)",
+      gridLineWidth: 0.8,
+      gridLineColor: "rgba(59, 130, 246, 0.06)",
       minorGridLineWidth: 0,
       tickInterval: 7 * 24 * 3600 * 1000,
     },
     yAxis: {
       title: { text: undefined },
-      gridLineColor: "rgba(59, 130, 246, 0.1)",
+      gridLineColor: "rgba(59, 130, 246, 0.12)",
       gridLineWidth: 1,
       labels: {
-        style: { color: "#5e6b80", fontSize: "11px", fontFamily: "Inter, sans-serif", fontWeight: "500" },
+        style: { color: "#5e6b80", fontSize: "12px", fontFamily: "Inter, sans-serif", fontWeight: "600" },
         formatter() { return formatMoney(Number(this.value)); },
       },
       opposite: false,
@@ -810,7 +866,7 @@ const Dashboard = ({ user, onAdd }: Props) => {
       shadow: false,
       padding: 0,
       shared: true,
-      crosshairs: { width: 1, color: "rgba(59, 130, 246, 0.4)" },
+      crosshairs: { width: 1, color: "rgba(96, 165, 250, 0.5)" },
       formatter() {
         const date = new Date(Number(this.x)).toLocaleDateString("en-IN", { weekday: "short", day: "2-digit", month: "short", year: "numeric" });
         // Get the balance value from the point
@@ -820,12 +876,12 @@ const Dashboard = ({ user, onAdd }: Props) => {
         const changePercent = user.startingBalance > 0 ? ((change / user.startingBalance) * 100).toFixed(2) : "0";
         const changeColor = change >= 0 ? "#10b981" : "#ef4444";
         const changeIcon = change >= 0 ? "↑" : "↓";
-        return `<div style="background:rgba(8,9,15,0.98);border:1.5px solid rgba(59,130,246,0.5);border-radius:12px;padding:12px 16px;min-width:180px;box-shadow:0 20px 60px rgba(0,0,0,0.8),inset 0 1px 2px rgba(255,255,255,0.1)">
-          <div style="color:#5e6b80;font-size:10px;margin-bottom:8px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase">${date}</div>
-          <div style="color:#3b82f6;font-size:18px;font-weight:900;letter-spacing:-0.6px;margin-bottom:8px">${formatMoney(value)}</div>
-          <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:${changeColor}15;border-radius:8px;border:1px solid ${changeColor}30">
-            <span style="font-size:14px;color:${changeColor};font-weight:700">${changeIcon}</span>
-            <span style="color:${changeColor};font-weight:700;font-size:11px">${formatMoney(Math.abs(change))} (${changePercent}%)</span>
+        return `<div style="background:rgba(8,9,15,0.98);border:2px solid rgba(59,130,246,0.6);border-radius:14px;padding:14px 18px;min-width:200px;box-shadow:0 25px 80px rgba(0,0,0,0.9),inset 0 1px 3px rgba(255,255,255,0.15)">
+          <div style="color:#5e6b80;font-size:11px;margin-bottom:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase">${date}</div>
+          <div style="color:#60a5fa;font-size:20px;font-weight:900;letter-spacing:-0.8px;margin-bottom:10px">${formatMoney(value)}</div>
+          <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:${changeColor}18;border-radius:10px;border:1.5px solid ${changeColor}40">
+            <span style="font-size:16px;color:${changeColor};font-weight:800">${changeIcon}</span>
+            <span style="color:${changeColor};font-weight:700;font-size:12px">${formatMoney(Math.abs(change))} (${changePercent}%)</span>
           </div>
         </div>`;
       },
@@ -835,11 +891,11 @@ const Dashboard = ({ user, onAdd }: Props) => {
       areaspline: {
         marker: {
           enabled: false,
-          radius: 5,
+          radius: 6,
           states: {
             hover: {
               enabled: true,
-              radius: 8,
+              radius: 9,
               fillColor: "#60a5fa",
               lineColor: "#ffffff",
               lineWidth: 2,
@@ -849,16 +905,16 @@ const Dashboard = ({ user, onAdd }: Props) => {
         fillColor: {
           linearGradient: { x1: 0, x2: 0, y1: 0, y2: 1 },
           stops: [
-            [0, "rgba(59, 130, 246, 0.4)"],
-            [0.5, "rgba(59, 130, 246, 0.2)"],
-            [1, "rgba(59, 130, 246, 0.01)"],
+            [0, "rgba(96, 165, 250, 0.6)"],
+            [0.4, "rgba(59, 130, 246, 0.35)"],
+            [1, "rgba(59, 130, 246, 0.08)"],
           ],
         },
         stacking: undefined,
-        lineWidth: 2,
+        lineWidth: 2.2,
         states: {
           hover: {
-            lineWidth: 3,
+            lineWidth: 2.8,
           },
         },
       },
@@ -867,14 +923,14 @@ const Dashboard = ({ user, onAdd }: Props) => {
       {
         type: "areaspline",
         name: "Wealth",
-        color: "#3b82f6",
-        lineWidth: 2,
+        color: "#60a5fa",
+        lineWidth: 2.2,
         shadow: {
-          color: "rgba(59, 130, 246, 0.35)",
-          width: 20,
+          color: "rgba(96, 165, 250, 0.5)",
+          width: 28,
           offsetX: 0,
-          offsetY: 8,
-          opacity: 0.9,
+          offsetY: 14,
+          opacity: 1.1,
         } as Highcharts.ShadowOptionsObject,
         data: wealthData,
       },
@@ -883,23 +939,23 @@ const Dashboard = ({ user, onAdd }: Props) => {
 
   const profitLossTrendOption = {
     backgroundColor: "transparent",
-    animation: { duration: 1300, easing: "cubicOut" },
+    animation: { duration: 1600, easing: "cubicOut" },
     title: { text: undefined },
     grid: {
       left: 65,
       right: 20,
       top: 20,
       bottom: 48,
-      borderColor: "rgba(59, 130, 246, 0.1)",
+      borderColor: "rgba(59, 130, 246, 0.12)",
     },
     legend: {
       top: "bottom",
       icon: "circle",
-      itemGap: 24,
-      textStyle: { color: "#9aa5ba", fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 600 },
+      itemGap: 28,
+      textStyle: { color: "#9aa5ba", fontFamily: "Inter, sans-serif", fontSize: 13, fontWeight: 700 },
       backgroundColor: "transparent",
       borderColor: "transparent",
-      padding: 8,
+      padding: 10,
       inactiveColor: "rgba(94, 107, 128, 0.4)",
     },
     tooltip: {
@@ -907,8 +963,8 @@ const Dashboard = ({ user, onAdd }: Props) => {
       axisPointer: { 
         type: "cross", 
         animation: true, 
-        lineStyle: { color: "rgba(59,130,246,0.25)", type: "solid", width: 1 }, 
-        crossStyle: { color: "rgba(59,130,246,0.25)", width: 1 } 
+        lineStyle: { color: "rgba(59,130,246,0.3)", type: "solid", width: 2 }, 
+        crossStyle: { color: "rgba(59,130,246,0.3)", width: 2 } 
       },
       backgroundColor: "transparent",
       borderWidth: 0,
@@ -923,49 +979,49 @@ const Dashboard = ({ user, onAdd }: Props) => {
         const loss   = Number((items[1] as { value?: [string | number, number] } | undefined)?.value?.[1] ?? 0);
         const net = profit - loss;
         const netColor = net >= 0 ? "#10b981" : "#ef4444";
-        return `<div style="background:rgba(8,9,15,0.96);border:1px solid rgba(59,130,246,0.35);border-radius:8px;padding:12px 16px;min-width:200px;box-shadow:0 12px 32px rgba(0,0,0,0.5)">
-          <div style="color:#5e6b80;font-size:10px;margin-bottom:8px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase">${date.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;padding:4px 0"><span style="color:#5e6b80;font-size:11px;font-weight:600">Profit</span><span style="color:#10b981;font-weight:700;font-size:12px">${formatMoney(profit)}</span></div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;padding:4px 0"><span style="color:#5e6b80;font-size:11px;font-weight:600">Loss</span><span style="color:#ef4444;font-weight:700;font-size:12px">${formatMoney(loss)}</span></div>
-          <div style="border-top:1px solid rgba(59,130,246,0.15);padding-top:6px;display:flex;justify-content:space-between;align-items:center"><span style="color:#5e6b80;font-size:10px;font-weight:600">Net</span><span style="color:${netColor};font-weight:800;font-size:12px">${formatMoney(net)}</span></div>
+        return `<div style="background:rgba(8,9,15,0.98);border:2px solid rgba(59,130,246,0.45);border-radius:12px;padding:14px 18px;min-width:220px;box-shadow:0 20px 50px rgba(0,0,0,0.7),inset 0 1px 3px rgba(255,255,255,0.12)">
+          <div style="color:#5e6b80;font-size:11px;margin-bottom:10px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase">${date.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding:6px 0"><span style="color:#5e6b80;font-size:12px;font-weight:600">Profit</span><span style="color:#10b981;font-weight:700;font-size:13px">${formatMoney(profit)}</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding:6px 0"><span style="color:#5e6b80;font-size:12px;font-weight:600">Loss</span><span style="color:#ef4444;font-weight:700;font-size:13px">${formatMoney(loss)}</span></div>
+          <div style="border-top:1.5px solid rgba(59,130,246,0.2);padding-top:8px;display:flex;justify-content:space-between;align-items:center"><span style="color:#5e6b80;font-size:11px;font-weight:600">Net P&L</span><span style="color:${netColor};font-weight:800;font-size:13px">${formatMoney(net)}</span></div>
         </div>`;
       },
     },
     xAxis: {
       type: "time",
       splitLine: { show: false },
-      axisLine: { lineStyle: { color: "rgba(59, 130, 246, 0.15)", width: 1 } },
-      axisLabel: { color: "#5e6b80", fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 500 },
+      axisLine: { lineStyle: { color: "rgba(59, 130, 246, 0.2)", width: 1 } },
+      axisLabel: { color: "#5e6b80", fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 600 },
       boundaryGap: false,
       gridLineColor: "rgba(59, 130, 246, 0.08)",
     },
     yAxis: {
       type: "value",
-      boundaryGap: [0, "10%"],
-      splitLine: { lineStyle: { color: "rgba(59, 130, 246, 0.1)", type: "dashed", width: 1 } },
-      axisLabel: { color: "#5e6b80", fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: 500, formatter: (value: number) => formatMoney(value) },
-      axisLine: { lineStyle: { color: "rgba(59, 130, 246, 0.15)" } },
+      boundaryGap: [0, "15%"],
+      splitLine: { lineStyle: { color: "rgba(59, 130, 246, 0.12)", type: "dashed", width: 1 } },
+      axisLabel: { color: "#5e6b80", fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 600, formatter: (value: number) => formatMoney(value) },
+      axisLine: { lineStyle: { color: "rgba(59, 130, 246, 0.2)" } },
     },
     series: [
       {
         name: "Profit",
         type: "line",
         showSymbol: false,
-        smooth: 0.7,
-        lineStyle: { width: 2, color: "#10b981" },
+        smooth: 0.8,
+        lineStyle: { width: 2.2, color: "#10b981" },
         itemStyle: { color: "#10b981", borderWidth: 0 },
         areaStyle: {
           color: {
             type: "linear",
             x: 0, y: 0, x2: 0, y2: 1,
             colorStops: [
-              { offset: 0, color: "rgba(16, 185, 129, 0.3)" },
-              { offset: 0.5, color: "rgba(16, 185, 129, 0.15)" },
-              { offset: 1, color: "rgba(16, 185, 129, 0.01)" },
+              { offset: 0, color: "rgba(16, 185, 129, 0.4)" },
+              { offset: 0.5, color: "rgba(16, 185, 129, 0.2)" },
+              { offset: 1, color: "rgba(16, 185, 129, 0.05)" },
             ],
           },
         },
-        emphasis: { scale: 1.05, lineStyle: { width: 3 }, shadowColor: "rgba(16, 185, 129, 0.2)", shadowBlur: 8 },
+        emphasis: { scale: 1.05, lineStyle: { width: 2.8 }, shadowColor: "rgba(16, 185, 129, 0.25)", shadowBlur: 10 },
         data: profitLossData.map((item) => [item.date, item.profit]),
       },
       {
@@ -973,20 +1029,20 @@ const Dashboard = ({ user, onAdd }: Props) => {
         type: "line",
         showSymbol: false,
         smooth: 0.7,
-        lineStyle: { width: 2, color: "#ef4444" },
+        lineStyle: { width: 1.8, color: "#ef4444" },
         itemStyle: { color: "#ef4444", borderWidth: 0 },
         areaStyle: {
           color: {
             type: "linear",
             x: 0, y: 0, x2: 0, y2: 1,
             colorStops: [
-              { offset: 0, color: "rgba(239, 68, 68, 0.3)" },
-              { offset: 0.5, color: "rgba(239, 68, 68, 0.15)" },
-              { offset: 1, color: "rgba(239, 68, 68, 0.01)" },
+              { offset: 0, color: "rgba(239, 68, 68, 0.35)" },
+              { offset: 0.5, color: "rgba(239, 68, 68, 0.18)" },
+              { offset: 1, color: "rgba(239, 68, 68, 0.05)" },
             ],
           },
         },
-        emphasis: { scale: 1.05, lineStyle: { width: 3 }, shadowColor: "rgba(239, 68, 68, 0.2)", shadowBlur: 8 },
+        emphasis: { scale: 1.05, lineStyle: { width: 2.5 }, shadowColor: "rgba(239, 68, 68, 0.25)", shadowBlur: 10 },
         data: profitLossData.map((item) => [item.date, item.loss]),
       },
     ],

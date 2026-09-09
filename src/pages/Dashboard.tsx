@@ -374,30 +374,6 @@ const Dashboard = ({ user, onAdd }: Props) => {
       close,
     ];
 
-    // Calculate EMA (Exponential Moving Average)
-    const calculateEMA = (prices: number[], period: number): Array<[number, number]> => {
-      if (prices.length < period) return [];
-      
-      const ema: Array<[number, number]> = [];
-      const multiplier = 2 / (period + 1);
-      
-      // Calculate SMA for first value
-      let sum = 0;
-      for (let i = 0; i < period; i++) {
-        sum += prices[i];
-      }
-      let emaValue = sum / period;
-      ema.push([period - 1, emaValue]);
-      
-      // Calculate EMA for remaining prices
-      for (let i = period; i < prices.length; i++) {
-        emaValue = prices[i] * multiplier + emaValue * (1 - multiplier);
-        ema.push([i, emaValue]);
-      }
-      
-      return ema;
-    };
-
     if (!transactions.length) {
       const createdAt = parseLocalDate(user.createdAt) ?? new Date();
 
@@ -599,24 +575,6 @@ const Dashboard = ({ user, onAdd }: Props) => {
 
     const latestPoint = candles[candles.length - 1];
 
-    // Extract close prices for EMA calculation
-    const closePrices = candles.map(c => c[4]);
-    
-    // Calculate EMA 9 and EMA 15 with timestamps
-    const ema9Prices = calculateEMA(closePrices, 9);
-    const ema15Prices = calculateEMA(closePrices, 15);
-    
-    // Map EMA data - ema9Prices contains [index, value] pairs
-    const ema9Data = ema9Prices.map(([index, value]) => {
-      const candleTimestamp = candles[Number(index)]?.[0];
-      return candleTimestamp ? [candleTimestamp, value] : null;
-    }).filter((d): d is [number, number] => d !== null);
-    
-    const ema15Data = ema15Prices.map(([index, value]) => {
-      const candleTimestamp = candles[Number(index)]?.[0];
-      return candleTimestamp ? [candleTimestamp, value] : null;
-    }).filter((d): d is [number, number] => d !== null);
-
     return {
       accessibility: { enabled: true },
       chart: {
@@ -768,28 +726,6 @@ const Dashboard = ({ user, onAdd }: Props) => {
           data: candles,
           dataGrouping: {
             units: [["week", [1]], ["month", [1, 2, 3, 4, 6]]],
-          },
-        },
-        {
-          type: "line",
-          name: "EMA 9",
-          data: ema9Data,
-          color: "#a78bfa",
-          lineWidth: 1.5,
-          marker: { enabled: false },
-          tooltip: {
-            valueDecimals: 2,
-          },
-        },
-        {
-          type: "line",
-          name: "EMA 15",
-          data: ema15Data,
-          color: "#f97316",
-          lineWidth: 1.5,
-          marker: { enabled: false },
-          tooltip: {
-            valueDecimals: 2,
           },
         },
       ],

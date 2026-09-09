@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
 import ReactECharts from "echarts-for-react";
@@ -11,6 +11,10 @@ import {
   TrendingDown,
   Wallet,
   DollarSign,
+  Lock,
+  LockOpen,
+  Pencil,
+  Check,
 } from "lucide-react";
 
 import ChartPanel from "../components/ChartPanel";
@@ -30,6 +34,7 @@ const EChartsChart =
 
 interface Props {
   user: UserAccount;
+  onSave?: (updatedUser: UserAccount) => void;
 }
 
 const formatMoney = (value: number, currency: string = "INR") =>
@@ -59,7 +64,11 @@ const getDateKey = (date: Date) => {
   return `${year}-${month}-${day}`;
 };
 
-const Analytics = ({ user }: Props) => {
+const Analytics = ({ user, onSave }: Props) => {
+  const [isEditingCost, setIsEditingCost] = useState(false);
+  const [costInput, setCostInput] = useState(String(user.defaultCostAmount ?? 0));
+  const [isCostLocked, setIsCostLocked] = useState(user.costLocked ?? false);
+
   const transactionCount = user.transactions.length;
 
   const balanceStats = calculateBalanceStats(user);
@@ -75,11 +84,20 @@ const Analytics = ({ user }: Props) => {
     (transaction) => transaction.type === "loss"
   ).length;
 
-  const totalCost = useMemo(() => {
-    return user.transactions.reduce((sum, transaction) => {
-      return sum + (transaction.costAmount ?? 0);
-    }, 0);
-  }, [user.transactions]);
+  const handleSaveCost = () => {
+    const nextCost = Number(costInput);
+    if (!Number.isFinite(nextCost) || nextCost < 0) {
+      return;
+    }
+    if (onSave) {
+      onSave({
+        ...user,
+        defaultCostAmount: nextCost,
+        costLocked: isCostLocked,
+      });
+    }
+    setIsEditingCost(false);
+  };
 
   const historySummary = useMemo(() => {
     const now = new Date();
@@ -526,8 +544,87 @@ const Analytics = ({ user }: Props) => {
             </div>
             <span>Cost</span>
           </div>
-          <div className="stat-value">{formatMoney(totalCost)}</div>
-          <div className="stat-trend">All transaction cost</div>
+          {isEditingCost ? (
+            <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={costInput}
+                onChange={(event) => setCostInput(event.target.value)}
+                autoFocus
+                placeholder="0.00"
+                style={{
+                  flex: 1,
+                  padding: "8px 12px",
+                  border: "1px solid rgba(59, 130, 246, 0.3)",
+                  borderRadius: 6,
+                  backgroundColor: "var(--bg-tertiary)",
+                  color: "var(--text-primary)",
+                  fontSize: 16,
+                  fontWeight: 600,
+                }}
+              />
+              <button
+                type="button"
+                onClick={handleSaveCost}
+                style={{
+                  padding: "6px 8px",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "#10b981",
+                }}
+                title="Save cost"
+              >
+                <Check size={18} />
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
+              <div className="stat-value">{formatMoney(Number(costInput))}</div>
+              <button
+                type="button"
+                onClick={() => setIsEditingCost(true)}
+                disabled={isCostLocked}
+                style={{
+                  padding: "6px 8px",
+                  background: "none",
+                  border: "none",
+                  cursor: isCostLocked ? "not-allowed" : "pointer",
+                  color: isCostLocked ? "var(--text-quaternary)" : "var(--text-secondary)",
+                  opacity: isCostLocked ? 0.5 : 1,
+                }}
+                title={isCostLocked ? "Cost is locked" : "Edit cost"}
+              >
+                <Pencil size={16} />
+              </button>
+            </div>
+          )}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div className="stat-trend">All transaction cost</div>
+            <button
+              type="button"
+              onClick={() => setIsCostLocked(!isCostLocked)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "4px",
+                padding: "4px 8px",
+                background: isCostLocked ? "rgba(239, 68, 68, 0.1)" : "rgba(59, 130, 246, 0.1)",
+                border: `1px solid ${isCostLocked ? "#ef4444" : "#3b82f6"}`,
+                borderRadius: "4px",
+                color: isCostLocked ? "#ef4444" : "#3b82f6",
+                cursor: "pointer",
+                fontSize: "11px",
+                fontWeight: 600,
+              }}
+              title={isCostLocked ? "Click to unlock cost" : "Click to lock cost"}
+            >
+              {isCostLocked ? <Lock size={12} /> : <LockOpen size={12} />}
+              {isCostLocked ? "Locked" : "Unlocked"}
+            </button>
+          </div>
         </div>
 
         <div className="stat-card">

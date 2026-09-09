@@ -55,4 +55,6 @@ export interface UserAccount {
   currentBalance?: number;
   /** Withdrawal history */
   withdrawals?: Withdrawal[];
+  /** Whether the default cost amount is locked */
+  costLocked?: boolean;
 }

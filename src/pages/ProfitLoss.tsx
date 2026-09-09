@@ -14,15 +14,34 @@ import { formatCurrency } from "../utils/money";
 import { calculateBalanceStats } from "../utils/balance";
 
 const parseLocalDate = (value: string) => {
-  const date = value.includes("T")
-    ? new Date(value)
-    : new Date(`${value}T00:00:00`);
-
-  if (Number.isNaN(date.getTime())) {
-    return null;
+  // Handle different date formats consistently
+  if (!value) return null;
+  
+  try {
+    // If it's already in ISO format, use it directly
+    if (value.includes('T')) {
+      const date = new Date(value);
+      if (!Number.isNaN(date.getTime())) {
+        return date;
+      }
+    }
+    
+    // If it's just a date string, parse it as local date
+    const date = new Date(value + 'T00:00:00');
+    if (!Number.isNaN(date.getTime())) {
+      return date;
+    }
+    
+    // Fallback: try direct parsing
+    const fallbackDate = new Date(value);
+    if (!Number.isNaN(fallbackDate.getTime())) {
+      return fallbackDate;
+    }
+  } catch (error) {
+    console.warn('Date parsing error:', value, error);
   }
 
-  return date;
+  return null;
 };
 
 const generateCalendarDays = (month: Date, transactions: any[]) => {
@@ -35,27 +54,48 @@ const generateCalendarDays = (month: Date, transactions: any[]) => {
   const days = [];
   const current = new Date(startDate);
   
-  // Group transactions by date
-  const transactionsByDate: Record<string, { profit: number; loss: number }> = {};
+  // Group transactions by date - use local date formatting
+  const transactionsByDate: Record<string, { profit: number; loss: number; transactions: any[] }> = {};
+  
+  console.log('Processing transactions for calendar:', transactions.length);
+  
   transactions.forEach(transaction => {
     const date = parseLocalDate(transaction.date);
     if (date) {
-      const dateKey = date.toISOString().split('T')[0];
+      // Create date key in YYYY-MM-DD format using local timezone
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const dateKey = `${year}-${month}-${day}`;
+      
+      console.log('Transaction date:', transaction.date, '-> parsed:', date, '-> key:', dateKey);
+      
       if (!transactionsByDate[dateKey]) {
-        transactionsByDate[dateKey] = { profit: 0, loss: 0 };
+        transactionsByDate[dateKey] = { profit: 0, loss: 0, transactions: [] };
       }
+      
       const amount = transaction.grossAmount || transaction.amount;
       if (transaction.type === 'profit') {
         transactionsByDate[dateKey].profit += amount;
       } else {
         transactionsByDate[dateKey].loss += amount;
       }
+      transactionsByDate[dateKey].transactions.push(transaction);
+    } else {
+      console.warn('Failed to parse date:', transaction.date);
     }
   });
   
+  console.log('Transactions by date:', transactionsByDate);
+  
   // Generate 42 days (6 weeks)
   for (let i = 0; i < 42; i++) {
-    const dateKey = current.toISOString().split('T')[0];
+    // Create date key for current calendar day
+    const year = current.getFullYear();
+    const month = String(current.getMonth() + 1).padStart(2, '0');
+    const day = String(current.getDate()).padStart(2, '0');
+    const dateKey = `${year}-${month}-${day}`;
+    
     const dayData = transactionsByDate[dateKey];
     const isCurrentMonth = current.getMonth() === monthIndex;
     
@@ -84,7 +124,8 @@ const generateCalendarDays = (month: Date, transactions: any[]) => {
       type: dayType,
       amount: amount,
       isEmpty: !isCurrentMonth,
-      tooltip: tooltip
+      tooltip: tooltip,
+      hasData: !!dayData
     });
     
     current.setDate(current.getDate() + 1);

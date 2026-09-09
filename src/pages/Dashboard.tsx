@@ -133,9 +133,10 @@ const Dashboard = ({ user, onAdd }: Props) => {
     const avgProfitPerTrade = profitCount > 0 ? balanceStats.totalProfit / profitCount : 0;
     const avgLossPerTrade = lossCount > 0 ? balanceStats.totalLoss / lossCount : 0;
 
-    const savingsPercentage =
-      balanceStats.currentBalance > 0
-        ? Math.max(0, Math.min(100, (balanceStats.netPerformance / balanceStats.currentBalance) * 100))
+    // Calculate percentage based on starting balance (ROI)
+    const performancePercentage =
+      balanceStats.startingBalance > 0
+        ? (balanceStats.netPerformance / balanceStats.startingBalance) * 100
         : 0;
 
     return {
@@ -146,7 +147,7 @@ const Dashboard = ({ user, onAdd }: Props) => {
       winRate,
       avgProfitPerTrade,
       avgLossPerTrade,
-      savingsPercentage,
+      performancePercentage,
     };
   }, [user.transactions, user.startingBalance]);
 
@@ -155,7 +156,7 @@ const Dashboard = ({ user, onAdd }: Props) => {
     totalLoss,
     currentBalance,
     netPerformance,
-    savingsPercentage,
+    performancePercentage,
     profitCount,
     lossCount,
     totalTrades,
@@ -1067,8 +1068,8 @@ const Dashboard = ({ user, onAdd }: Props) => {
     ],
   };
 
-  const gaugeColor = savingsPercentage >= 70 ? "#10b981" : savingsPercentage >= 40 ? "#f5a623" : "#ff4d6a";
-  const gaugeGlow  = savingsPercentage >= 70 ? "rgba(16,185,129,0.5)"  : savingsPercentage >= 40 ? "rgba(245,166,35,0.5)"  : "rgba(255,77,106,0.5)";
+  const gaugeColor = performancePercentage >= 70 ? "#10b981" : performancePercentage >= 40 ? "#f5a623" : "#ff4d6a";
+  const gaugeGlow  = performancePercentage >= 70 ? "rgba(16,185,129,0.5)"  : performancePercentage >= 40 ? "rgba(245,166,35,0.5)"  : "rgba(255,77,106,0.5)";
 
   const healthOption = {
     backgroundColor: "transparent",
@@ -1093,7 +1094,7 @@ const Dashboard = ({ user, onAdd }: Props) => {
               type: "linear",
               x: 0, y: 0, x2: 1, y2: 0,
               colorStops: [
-                { offset: 0, color: savingsPercentage >= 40 ? "#4f8fff" : "#ff4d6a" },
+                { offset: 0, color: performancePercentage >= 40 ? "#4f8fff" : "#ff4d6a" },
                 { offset: 1, color: gaugeColor },
               ],
             },
@@ -1132,7 +1133,7 @@ const Dashboard = ({ user, onAdd }: Props) => {
           fontWeight: 600,
           fontFamily: "Inter, sans-serif",
         },
-        data: [{ value: Number(savingsPercentage.toFixed(1)), name: "financial health" }],
+        data: [{ value: Number(performancePercentage.toFixed(1)), name: "financial health" }],
       },
     ],
   };
@@ -1219,7 +1220,7 @@ const Dashboard = ({ user, onAdd }: Props) => {
           title="Net performance"
           value={netPerformance}
           formatValue={(value) => formatCurrency(value, user.currency)}
-          subtitle={`${savingsPercentage.toFixed(1)}% performance`}
+          subtitle={`${performancePercentage.toFixed(1)}% performance`}
           positive={netPerformance >= 0}
           icon={<BarChart3 size={19} />}
           colorVariant={netPerformance >= 0 ? "green" : "amber"}

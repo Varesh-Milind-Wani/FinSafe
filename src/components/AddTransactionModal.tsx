@@ -102,6 +102,14 @@ const AddTransactionModal = ({
   const [dateTime, setDateTime] = useState(() =>
     toLocalDateTimeValue(initialDate)
   );
+  
+  // New confidence level states
+  const [trackConfidence, setTrackConfidence] = useState(
+    initialTransaction?.trackConfidence ?? false
+  );
+  const [confidenceLevel, setConfidenceLevel] = useState(
+    initialTransaction?.confidenceLevel ?? 50
+  );
 
   const scheduledCost = getScheduledCost(
     dateTime,
@@ -133,6 +141,8 @@ const AddTransactionModal = ({
       price: activeAmount,
       category,
       note: note.trim() || (currentType === "profit" ? "Profit Trade" : "Loss Trade"),
+      trackConfidence: trackConfidence,
+      confidenceLevel: trackConfidence ? confidenceLevel : undefined,
     };
 
     onSave(transaction);
@@ -296,6 +306,51 @@ const AddTransactionModal = ({
                 onChange={(event) => setNote(event.target.value)}
                 placeholder="e.g. Took BankNifty CE trade on 15m breakout"
               />
+            </div>
+
+            {/* Confidence Level Section */}
+            <div className="form-group form-span-full confidence-section">
+              <div className="confidence-checkbox">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={trackConfidence}
+                    onChange={(event) => setTrackConfidence(event.target.checked)}
+                  />
+                  <span className="confidence-checkbox-text">
+                    Track confidence level for this trade
+                  </span>
+                </label>
+              </div>
+
+              {trackConfidence && (
+                <div className="confidence-slider-container">
+                  <label htmlFor="confidence-slider" className="confidence-label">
+                    <span className="confidence-title">
+                      Confidence Level: <strong>{confidenceLevel}%</strong>
+                    </span>
+                    <span className="confidence-subtitle">
+                      How confident were you in this trade decision?
+                    </span>
+                  </label>
+                  
+                  <div className="slider-wrapper">
+                    <input
+                      id="confidence-slider"
+                      type="range"
+                      min="1"
+                      max="100"
+                      value={confidenceLevel}
+                      onChange={(event) => setConfidenceLevel(Number(event.target.value))}
+                      className="confidence-slider"
+                    />
+                    <div className="slider-labels">
+                      <span>1% - Not confident</span>
+                      <span>100% - Very confident</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

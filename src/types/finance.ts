@@ -25,6 +25,10 @@ export interface Transaction {
   profitTradeCount?: number;
   /** Number of loss trades (1–5). */
   lossTradeCount?: number;
+  /** Confidence level for this trade (1-100) */
+  confidenceLevel?: number;
+  /** Whether confidence tracking is enabled for this trade */
+  trackConfidence?: boolean;
 }
 
 export interface DefaultCostSchedule {

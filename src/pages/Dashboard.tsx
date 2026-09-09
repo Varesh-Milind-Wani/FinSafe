@@ -18,6 +18,7 @@ import ChartFullscreenModal from "../components/ChartFullscreenModal";
 import type { UserAccount } from "../types/finance";
 import { exportFinanceToExcel } from "../utils/excel";
 import { formatCurrency } from "../utils/money";
+import { calculateBalanceStats } from "../utils/balance";
 
 const HighchartsChart =
   (HighchartsReact as unknown as {
@@ -123,46 +124,31 @@ const Dashboard = ({ user, onAdd }: Props) => {
   const formatMoney = (value: number) => formatCurrency(value, user.currency);
 
   const stats = useMemo(() => {
-    const totalProfit = user.transactions
-      .filter((transaction) => transaction.type === "profit")
-      .reduce((sum, transaction) => sum + transaction.amount, 0);
-
-    const totalLoss = user.transactions
-      .filter((transaction) => transaction.type === "loss")
-      .reduce((sum, transaction) => sum + transaction.amount, 0);
-
-    // Calculate balance from ALL transactions, not from cached currentBalance
-    // This ensures we always show the true balance based on transaction history
-    const calculatedBalance = user.startingBalance + totalProfit - totalLoss;
-    const currentBalance = calculatedBalance;
-    const netPerformance = currentBalance - user.startingBalance;
-
-    const savingsPercentage =
-      currentBalance > 0
-        ? Math.max(0, Math.min(100, (netPerformance / currentBalance) * 100))
-        : 0;
-
+    const balanceStats = calculateBalanceStats(user);
+    
     const profitCount = user.transactions.filter((t) => t.type === "profit").length;
     const lossCount = user.transactions.filter((t) => t.type === "loss").length;
     const totalTrades = profitCount + lossCount;
     const winRate = totalTrades > 0 ? (profitCount / totalTrades) * 100 : 0;
-    const avgProfitPerTrade = profitCount > 0 ? totalProfit / profitCount : 0;
-    const avgLossPerTrade = lossCount > 0 ? totalLoss / lossCount : 0;
+    const avgProfitPerTrade = profitCount > 0 ? balanceStats.totalProfit / profitCount : 0;
+    const avgLossPerTrade = lossCount > 0 ? balanceStats.totalLoss / lossCount : 0;
+
+    const savingsPercentage =
+      balanceStats.currentBalance > 0
+        ? Math.max(0, Math.min(100, (balanceStats.netPerformance / balanceStats.currentBalance) * 100))
+        : 0;
 
     return {
-      totalProfit,
-      totalLoss,
-      currentBalance,
-      netPerformance,
-      savingsPercentage,
+      ...balanceStats,
       profitCount,
       lossCount,
       totalTrades,
       winRate,
       avgProfitPerTrade,
       avgLossPerTrade,
+      savingsPercentage,
     };
-  }, [user.transactions, user.startingBalance, user.currentBalance]);
+  }, [user.transactions, user.startingBalance]);
 
   const {
     totalProfit,

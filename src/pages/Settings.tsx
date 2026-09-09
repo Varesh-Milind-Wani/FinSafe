@@ -14,6 +14,7 @@ import {
 
 import type { DefaultCostSchedule, UserAccount } from "../types/finance";
 import { formatCurrency } from "../utils/money";
+import { calculateCurrentBalance } from "../utils/balance";
 import { addSampleTradesToUser } from "../utils/storage";
 
 const getCostForDate = (
@@ -54,15 +55,7 @@ interface Props {
 
 const Settings = ({ user, onSave }: Props) => {
   const currentBalance = useMemo(() => {
-    const totalProfit = user.transactions
-      .filter((transaction) => transaction.type === "profit")
-      .reduce((sum, transaction) => sum + transaction.amount, 0);
-
-    const totalLoss = user.transactions
-      .filter((transaction) => transaction.type === "loss")
-      .reduce((sum, transaction) => sum + transaction.amount, 0);
-
-    return user.startingBalance + totalProfit - totalLoss;
+    return calculateCurrentBalance(user);
   }, [user.startingBalance, user.transactions]);
 
   const [name, setName] = useState(user.name);

@@ -121,7 +121,7 @@ const Settings = ({ user, onSave }: Props) => {
       name: name.trim(),
       email: email.trim(),
       startingBalance: nextBalance,
-      currentBalance: nextCurrentBalance,
+      currentBalance: nextCurrentBalance, // Allow manual balance override for rebalancing
       currency,
       defaultCostAmount: user.defaultCostAmount ?? 0,
       defaultCostSchedules: schedules,

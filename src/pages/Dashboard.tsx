@@ -602,12 +602,12 @@ const Dashboard = ({ user, onAdd }: Props) => {
     // Extract close prices for EMA calculation
     const closePrices = candles.map(c => c[4]);
     
-    // Calculate EMA 9 and EMA 16 with timestamps
+    // Calculate EMA 9 and EMA 15 with timestamps
     const ema9Prices = calculateEMA(closePrices, 9);
-    const ema16Prices = calculateEMA(closePrices, 16);
+    const ema15Prices = calculateEMA(closePrices, 15);
     
     const ema9Data = ema9Prices.map(([index, value]) => [candles[index][0], value]);
-    const ema16Data = ema16Prices.map(([index, value]) => [candles[index][0], value]);
+    const ema15Data = ema15Prices.map(([index, value]) => [candles[index][0], value]);
 
     return {
       accessibility: { enabled: true },
@@ -775,8 +775,8 @@ const Dashboard = ({ user, onAdd }: Props) => {
         },
         {
           type: "line",
-          name: "EMA 16",
-          data: ema16Data,
+          name: "EMA 15",
+          data: ema15Data,
           color: "#f97316",
           lineWidth: 1.5,
           marker: { enabled: false },

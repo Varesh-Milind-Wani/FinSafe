@@ -2372,3 +2372,39 @@ input:focus, select:focus, textarea:focus {
     text-align: left;
   }
 }
+/* Remove scrollbars from main content area */
+.main-area {
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.main-area::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Webkit */
+}
+
+.page-content {
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.page-content::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Webkit */
+}
+
+/* Also hide scrollbars from any other scrollable elements */
+.calendar-section,
+.daily-pl-list,
+.metrics-grid {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.calendar-section::-webkit-scrollbar,
+.daily-pl-list::-webkit-scrollbar,
+.metrics-grid::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Webkit */
+}

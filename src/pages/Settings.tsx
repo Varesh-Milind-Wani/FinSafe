@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import {
   CalendarDays,
   Check,
+  Lock,
+  LockOpen,
   Pencil,
   Plus,
   Save,
@@ -63,6 +65,9 @@ const Settings = ({ user, onSave }: Props) => {
   const [startingBalance, setStartingBalance] = useState(
     String(user.startingBalance)
   );
+  const [isStartingBalanceLocked, setIsStartingBalanceLocked] = useState(
+    user.startingBalanceLocked ?? false
+  );
   const [currentBalanceInput, setCurrentBalanceInput] = useState(
     String(user.currentBalance ?? currentBalance)
   );
@@ -84,6 +89,7 @@ const Settings = ({ user, onSave }: Props) => {
     setName(user.name);
     setEmail(user.email);
     setStartingBalance(String(user.startingBalance));
+    setIsStartingBalanceLocked(user.startingBalanceLocked ?? false);
     setCurrentBalanceInput(String(user.currentBalance ?? currentBalance));
     setCurrency(user.currency ?? "INR");
     setSchedules(user.defaultCostSchedules ?? []);
@@ -106,6 +112,12 @@ const Settings = ({ user, onSave }: Props) => {
       return;
     }
 
+    // If starting balance is locked, don't allow changes to it
+    if (isStartingBalanceLocked && nextBalance !== user.startingBalance) {
+      setStatus("Starting balance is locked. Unlock to make changes.");
+      return;
+    }
+
     if (!Number.isFinite(nextBalance) || nextBalance < 0) {
       setStatus("Starting balance must be a valid positive number.");
       return;
@@ -121,6 +133,7 @@ const Settings = ({ user, onSave }: Props) => {
       name: name.trim(),
       email: email.trim(),
       startingBalance: nextBalance,
+      startingBalanceLocked: isStartingBalanceLocked,
       currentBalance: nextCurrentBalance, // Allow manual balance override for rebalancing
       currency,
       defaultCostAmount: user.defaultCostAmount ?? 0,
@@ -258,15 +271,45 @@ const Settings = ({ user, onSave }: Props) => {
             </label>
 
             <label className="form-span-full">
-              Starting balance
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
+                <span>Starting balance</span>
+                <button
+                  type="button"
+                  onClick={() => setIsStartingBalanceLocked(!isStartingBalanceLocked)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    padding: "4px 8px",
+                    background: isStartingBalanceLocked ? "rgba(239, 68, 68, 0.1)" : "rgba(59, 130, 246, 0.1)",
+                    border: `1px solid ${isStartingBalanceLocked ? "#ef4444" : "#3b82f6"}`,
+                    borderRadius: "4px",
+                    color: isStartingBalanceLocked ? "#ef4444" : "#3b82f6",
+                    cursor: "pointer",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                  }}
+                  title={isStartingBalanceLocked ? "Click to unlock starting balance" : "Click to lock starting balance"}
+                >
+                  {isStartingBalanceLocked ? <Lock size={14} /> : <LockOpen size={14} />}
+                  {isStartingBalanceLocked ? "Locked" : "Unlocked"}
+                </button>
+              </div>
               <input
                 type="number"
                 min="0"
                 value={startingBalance}
-                onChange={(event) =>
-                  setStartingBalance(event.target.value)
-                }
+                onChange={(event) => {
+                  if (!isStartingBalanceLocked) {
+                    setStartingBalance(event.target.value);
+                  }
+                }}
+                disabled={isStartingBalanceLocked}
                 placeholder="5000"
+                style={{
+                  opacity: isStartingBalanceLocked ? 0.5 : 1,
+                  cursor: isStartingBalanceLocked ? "not-allowed" : "text",
+                }}
               />
             </label>
 

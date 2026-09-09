@@ -44,6 +44,7 @@ export interface UserAccount {
   email: string;
   password: string;
   startingBalance: number;
+  startingBalanceLocked?: boolean;
   currency: string;
   defaultCostAmount: number;
   defaultCostSchedules: DefaultCostSchedule[];

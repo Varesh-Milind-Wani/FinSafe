@@ -13,22 +13,47 @@ interface Props {
   transactions: Transaction[];
   onDelete: (id: string) => void;
   onEdit: (transaction: Transaction) => void;
+  startingBalance?: number;
 }
 
 const TransactionTable = ({
   transactions,
   onDelete,
   onEdit,
+  startingBalance = 0,
 }: Props) => {
   const [search, setSearch] = useState("");
   const [sortOrder, setSortOrder] =
     useState<"newest" | "oldest">("newest");
   const [typeFilter, setTypeFilter] = useState<"all" | "profit" | "loss">("all");
 
+  // Calculate running balance for each transaction
+  const transactionsWithBalance = useMemo(() => {
+    const sorted = [...transactions].sort((left, right) => {
+      const leftDate = new Date(left.date).getTime();
+      const rightDate = new Date(right.date).getTime();
+      return leftDate - rightDate;
+    });
+
+    let runningBalance = startingBalance;
+    return sorted.map((transaction) => ({
+      ...transaction,
+      balance: (() => {
+        const amount = transaction.amount;
+        if (transaction.type === 'profit') {
+          runningBalance += amount;
+        } else {
+          runningBalance -= amount;
+        }
+        return runningBalance;
+      })(),
+    }));
+  }, [transactions, startingBalance]);
+
   const filteredTransactions = useMemo(() => {
     const value = search.toLowerCase();
 
-    return [...transactions]
+    return [...transactionsWithBalance]
       .filter((transaction) => {
         if (typeFilter !== "all" && transaction.type !== typeFilter) return false;
         return (
@@ -44,7 +69,7 @@ const TransactionTable = ({
           ? rightDate - leftDate
           : leftDate - rightDate;
       });
-  }, [transactions, search, sortOrder, typeFilter]);
+  }, [transactionsWithBalance, search, sortOrder, typeFilter]);
 
   return (
     <div className="enterprise-table-container">
@@ -97,6 +122,7 @@ const TransactionTable = ({
               <th>Gross</th>
               <th>Cost</th>
               <th>Net Amount</th>
+              <th>Balance</th>
               <th className="action-column">Actions</th>
             </tr>
           </thead>
@@ -165,6 +191,10 @@ const TransactionTable = ({
                     {isProfit ? "+" : "-"}₹{transaction.amount.toLocaleString("en-IN")}
                   </td>
 
+                  <td className="numeric-cell balance-cell">
+                    <span className="balance-amount">₹{Math.round(transaction.balance).toLocaleString("en-IN")}</span>
+                  </td>
+
                   <td className="action-column">
                     <div className="table-actions">
                       <button
@@ -190,7 +220,7 @@ const TransactionTable = ({
 
             {filteredTransactions.length === 0 && (
               <tr>
-                <td colSpan={9} className="table-empty-state">
+                <td colSpan={10} className="table-empty-state">
                   <div className="empty-state-content">
                     <Search size={32} />
                     <p>No transactions found matching your criteria.</p>

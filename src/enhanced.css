@@ -2449,3 +2449,17 @@ html::-webkit-scrollbar, body::-webkit-scrollbar {
 .metrics-grid::-webkit-scrollbar {
   display: none; /* Chrome/Safari/Webkit */
 }
+
+/* Balance Column Styling */
+.balance-cell {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.balance-amount {
+  display: inline-block;
+  padding: 4px 8px;
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 4px;
+  border-left: 2px solid var(--primary);
+}

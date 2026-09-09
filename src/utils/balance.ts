@@ -3,6 +3,7 @@ import type { UserAccount } from '../types/finance';
 /**
  * Calculate current balance consistently across all pages
  * Uses manual currentBalance if set, otherwise calculates from transactions
+ * Uses grossAmount for all calculations for consistency
  */
 export const calculateCurrentBalance = (user: UserAccount): number => {
   // If there's a manual balance override, use it (for rebalancing)
@@ -10,14 +11,14 @@ export const calculateCurrentBalance = (user: UserAccount): number => {
     return user.currentBalance;
   }
 
-  // Otherwise calculate from transactions using net amounts
+  // Otherwise calculate from transactions using gross amounts (before cost deduction)
   const totalProfit = user.transactions
     .filter((transaction) => transaction.type === "profit")
-    .reduce((sum, transaction) => sum + transaction.amount, 0);
+    .reduce((sum, transaction) => sum + (transaction.grossAmount ?? transaction.amount), 0);
 
   const totalLoss = user.transactions
     .filter((transaction) => transaction.type === "loss")
-    .reduce((sum, transaction) => sum + transaction.amount, 0);
+    .reduce((sum, transaction) => sum + (transaction.grossAmount ?? transaction.amount), 0);
 
   return user.startingBalance + totalProfit - totalLoss;
 };

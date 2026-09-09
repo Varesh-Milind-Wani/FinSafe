@@ -1667,6 +1667,61 @@ input:focus, select:focus, textarea:focus {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Chat Suggestions */
+.chat-suggestions {
+  padding: var(--spacing-lg);
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: var(--radius-lg);
+  width: 100%;
+}
+
+.suggestions-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  margin-bottom: var(--spacing-md);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.suggestions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.suggestion-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.08));
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: var(--radius-md);
+  color: #60a5fa;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.suggestion-btn:hover {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.25), rgba(59, 130, 246, 0.15));
+  border-color: rgba(59, 130, 246, 0.4);
+  transform: translateY(-2px);
+}
+
+/* Help Message */
+.chat-bubble.help-message {
+  white-space: pre-wrap;
+  font-family: "Courier New", monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.2);
+}
 /* Profit & Loss Summary Section */
 .profit-loss-section {
   margin: var(--spacing-xl) 0;

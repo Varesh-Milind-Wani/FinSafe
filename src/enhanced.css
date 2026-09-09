@@ -1126,7 +1126,7 @@ input:focus, select:focus, textarea:focus {
   gap: var(--spacing-lg);
   padding: var(--spacing-xl);
   border-top: 1px solid var(--border-subtle);
-  background-color: var(--bg-tertiary);
+  background-color: transparent;
 }
 
 /* =========================================

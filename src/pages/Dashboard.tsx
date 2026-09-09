@@ -606,8 +606,16 @@ const Dashboard = ({ user, onAdd }: Props) => {
     const ema9Prices = calculateEMA(closePrices, 9);
     const ema15Prices = calculateEMA(closePrices, 15);
     
-    const ema9Data = ema9Prices.map(([index, value]) => [candles[index][0], value]);
-    const ema15Data = ema15Prices.map(([index, value]) => [candles[index][0], value]);
+    // Map EMA data - ema9Prices contains [index, value] pairs
+    const ema9Data = ema9Prices.map(([index, value]) => {
+      const candleTimestamp = candles[Number(index)]?.[0];
+      return candleTimestamp ? [candleTimestamp, value] : null;
+    }).filter((d): d is [number, number] => d !== null);
+    
+    const ema15Data = ema15Prices.map(([index, value]) => {
+      const candleTimestamp = candles[Number(index)]?.[0];
+      return candleTimestamp ? [candleTimestamp, value] : null;
+    }).filter((d): d is [number, number] => d !== null);
 
     return {
       accessibility: { enabled: true },

@@ -103,10 +103,7 @@ const AddTransactionModal = ({
     toLocalDateTimeValue(initialDate)
   );
   
-  // New confidence level states
-  const [trackConfidence, setTrackConfidence] = useState(
-    initialTransaction?.trackConfidence ?? false
-  );
+  // New confidence level states (always active, no checkbox)
   const [confidenceLevel, setConfidenceLevel] = useState(
     initialTransaction?.confidenceLevel ?? 50
   );
@@ -141,8 +138,7 @@ const AddTransactionModal = ({
       price: activeAmount,
       category,
       note: note.trim() || (currentType === "profit" ? "Profit Trade" : "Loss Trade"),
-      trackConfidence: trackConfidence,
-      confidenceLevel: trackConfidence ? confidenceLevel : undefined,
+      confidenceLevel: confidenceLevel,
     };
 
     onSave(transaction);
@@ -308,49 +304,38 @@ const AddTransactionModal = ({
               />
             </div>
 
-            {/* Confidence Level Section */}
-            <div className="form-group form-span-full confidence-section">
-              <div className="confidence-checkbox">
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={trackConfidence}
-                    onChange={(event) => setTrackConfidence(event.target.checked)}
-                  />
-                  <span className="confidence-checkbox-text">
-                    Track confidence level for this trade
-                  </span>
-                </label>
-              </div>
-
-              {trackConfidence && (
-                <div className="confidence-slider-container">
-                  <label htmlFor="confidence-slider" className="confidence-label">
-                    <span className="confidence-title">
-                      Confidence Level: <strong>{confidenceLevel}%</strong>
-                    </span>
-                    <span className="confidence-subtitle">
-                      How confident were you in this trade decision?
-                    </span>
-                  </label>
-                  
-                  <div className="slider-wrapper">
-                    <input
-                      id="confidence-slider"
-                      type="range"
-                      min="1"
-                      max="100"
-                      value={confidenceLevel}
-                      onChange={(event) => setConfidenceLevel(Number(event.target.value))}
-                      className="confidence-slider"
-                    />
-                    <div className="slider-labels">
-                      <span>1% - Not confident</span>
-                      <span>100% - Very confident</span>
-                    </div>
-                  </div>
+            {/* Enhanced Confidence Level Section */}
+            <div className="form-section-divider" style={{ gridColumn: "1 / -1", height: "1px", background: "rgba(59,130,246,0.1)", margin: "16px 0" }}></div>
+            
+            <div className="form-group form-span-full confidence-level-section">
+              <label htmlFor="confidence-slider" className="confidence-main-label">
+                <span className="field-label-text">
+                  Confidence Level: <span className="confidence-value">{confidenceLevel}%</span>
+                </span>
+                <span className="field-hint">
+                  How confident were you in this trade decision?
+                </span>
+              </label>
+              
+              <div className="enhanced-slider-container">
+                <input
+                  id="confidence-slider"
+                  type="range"
+                  min="1"
+                  max="100"
+                  value={confidenceLevel}
+                  onChange={(event) => setConfidenceLevel(Number(event.target.value))}
+                  className="enhanced-confidence-slider"
+                />
+                <div className="slider-track-labels">
+                  <span className="track-label low">Low Confidence</span>
+                  <span className="track-label medium">Moderate</span>
+                  <span className="track-label high">High Confidence</span>
                 </div>
-              )}
+                <div className="confidence-indicator">
+                  <div className="confidence-bar" style={{ width: `${confidenceLevel}%` }}></div>
+                </div>
+              </div>
             </div>
           </div>
 

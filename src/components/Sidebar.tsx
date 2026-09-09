@@ -6,15 +6,16 @@ import {
   LogOut,
   Settings,
   TrendingDown,
+  TrendingUp,
   MessageCircle,
 } from "lucide-react";
 import type { UserAccount } from "../types/finance";
 
 interface SidebarProps {
   user: UserAccount;
-  activePage: "dashboard" | "transactions" | "analytics" | "withdrawals" | "settings" | "chat";
+  activePage: "dashboard" | "transactions" | "analytics" | "profitloss" | "withdrawals" | "settings" | "chat";
   onPageChange: (
-    page: "dashboard" | "transactions" | "analytics" | "withdrawals" | "settings" | "chat"
+    page: "dashboard" | "transactions" | "analytics" | "profitloss" | "withdrawals" | "settings" | "chat"
   ) => void;
   onLogout: () => void;
   mobileOpen: boolean;
@@ -80,6 +81,18 @@ const Sidebar = ({
         >
           <BarChart3 size={18} />
           Analytics
+        </button>
+
+        <button
+          className={
+            activePage === "profitloss"
+              ? "nav-button active"
+              : "nav-button"
+          }
+          onClick={() => onPageChange("profitloss")}
+        >
+          <TrendingUp size={18} />
+          P&L
         </button>
 
         <button

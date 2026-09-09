@@ -6,6 +6,7 @@ import AddTransactionModal from "./components/AddTransactionModal";
 
 import Dashboard from "./pages/Dashboard";
 import Analytics from "./pages/Analytics.tsx";
+import ProfitLoss from "./pages/ProfitLoss";
 import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import Transactions from "./pages/Transactions";
@@ -32,7 +33,7 @@ const App = () => {
 
   const [activePage, setActivePage] =
     useState<
-      "dashboard" | "transactions" | "analytics" | "withdrawals" | "settings" | "chat"
+      "dashboard" | "transactions" | "analytics" | "profitloss" | "withdrawals" | "settings" | "chat"
     >("dashboard");
 
   const [modalOpen, setModalOpen] =
@@ -140,6 +141,7 @@ const App = () => {
       | "dashboard"
       | "transactions"
       | "analytics"
+      | "profitloss"
       | "withdrawals"
       | "settings"
       | "chat"
@@ -185,11 +187,13 @@ const App = () => {
                   ? "Transactions"
                   : activePage === "analytics"
                     ? "Analytics"
-                    : activePage === "withdrawals"
-                      ? "Withdrawals"
-                      : activePage === "chat"
-                        ? "Chat Assistant"
-                        : "Settings"}
+                    : activePage === "profitloss"
+                      ? "P&L"
+                      : activePage === "withdrawals"
+                        ? "Withdrawals"
+                        : activePage === "chat"
+                          ? "Chat Assistant"
+                          : "Settings"}
             </span>
 
             <h2>
@@ -199,11 +203,13 @@ const App = () => {
                   ? "Transaction records"
                   : activePage === "analytics"
                     ? "Analytics"
-                    : activePage === "withdrawals"
-                      ? "Withdrawals"
-                      : activePage === "chat"
-                        ? "Chat Assistant"
-                        : "Settings"}
+                    : activePage === "profitloss"
+                      ? "Profit & Loss Analysis"
+                      : activePage === "withdrawals"
+                        ? "Withdrawals"
+                        : activePage === "chat"
+                          ? "Chat Assistant"
+                          : "Settings"}
             </h2>
           </div>
         </header>
@@ -235,6 +241,8 @@ const App = () => {
           />
         ) : activePage === "analytics" ? (
           <Analytics user={user} />
+        ) : activePage === "profitloss" ? (
+          <ProfitLoss user={user} />
         ) : activePage === "withdrawals" ? (
           <Withdrawals
             user={user}

@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
 import ReactECharts from "echarts-for-react";
+import { useState } from "react";
 import {
   BarChart3,
   Activity,
@@ -10,6 +11,7 @@ import {
   TrendingUp,
   TrendingDown,
   Wallet,
+  Calendar,
 } from "lucide-react";
 
 import ChartPanel from "../components/ChartPanel";
@@ -49,6 +51,74 @@ const parseLocalDate = (value: string) => {
   return date;
 };
 
+const generateCalendarDays = (month: Date, transactions: any[]) => {
+  const year = month.getFullYear();
+  const monthIndex = month.getMonth();
+  const firstDay = new Date(year, monthIndex, 1);
+  const startDate = new Date(firstDay);
+  startDate.setDate(startDate.getDate() - firstDay.getDay());
+  
+  const days = [];
+  const current = new Date(startDate);
+  
+  // Group transactions by date
+  const transactionsByDate: Record<string, { profit: number; loss: number }> = {};
+  transactions.forEach(transaction => {
+    const date = parseLocalDate(transaction.date);
+    if (date) {
+      const dateKey = date.toISOString().split('T')[0];
+      if (!transactionsByDate[dateKey]) {
+        transactionsByDate[dateKey] = { profit: 0, loss: 0 };
+      }
+      const amount = transaction.grossAmount || transaction.amount;
+      if (transaction.type === 'profit') {
+        transactionsByDate[dateKey].profit += amount;
+      } else {
+        transactionsByDate[dateKey].loss += amount;
+      }
+    }
+  });
+  
+  // Generate 42 days (6 weeks)
+  for (let i = 0; i < 42; i++) {
+    const dateKey = current.toISOString().split('T')[0];
+    const dayData = transactionsByDate[dateKey];
+    const isCurrentMonth = current.getMonth() === monthIndex;
+    
+    let dayType = 'neutral';
+    let amount = null;
+    let tooltip = current.toLocaleDateString();
+    
+    if (dayData && isCurrentMonth) {
+      const netAmount = dayData.profit - dayData.loss;
+      if (netAmount > 0) {
+        dayType = 'profit';
+        amount = netAmount;
+        tooltip = `${tooltip} - Profit: ₹${dayData.profit}, Loss: ₹${dayData.loss}, Net: +₹${netAmount}`;
+      } else if (netAmount < 0) {
+        dayType = 'loss';
+        amount = Math.abs(netAmount);
+        tooltip = `${tooltip} - Profit: ₹${dayData.profit}, Loss: ₹${dayData.loss}, Net: -₹${Math.abs(netAmount)}`;
+      } else if (dayData.profit > 0 || dayData.loss > 0) {
+        dayType = 'neutral';
+        tooltip = `${tooltip} - Profit: ₹${dayData.profit}, Loss: ₹${dayData.loss}, Net: ₹0`;
+      }
+    }
+    
+    days.push({
+      day: current.getDate(),
+      type: dayType,
+      amount: amount,
+      isEmpty: !isCurrentMonth,
+      tooltip: tooltip
+    });
+    
+    current.setDate(current.getDate() + 1);
+  }
+  
+  return days;
+};
+
 const getDateKey = (date: Date) => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -58,6 +128,9 @@ const getDateKey = (date: Date) => {
 };
 
 const Analytics = ({ user }: Props) => {
+  // Calendar state
+  const [calendarMonths, setCalendarMonths] = useState(1);
+
   const transactionCount = user.transactions.length;
 
   const totalProfit = user.transactions
@@ -466,6 +539,62 @@ const Analytics = ({ user }: Props) => {
             <ArrowDownRight size={16} />
             {formatMoney(totalLoss)} loss
           </div>
+        </div>
+      </div>
+
+      {/* Calendar Section */}
+      <div className="calendar-section">
+        <div className="calendar-header">
+          <div className="calendar-title">
+            <Calendar size={20} />
+            <h2>Trading Calendar</h2>
+          </div>
+          <div className="calendar-controls">
+            <select 
+              value={calendarMonths} 
+              onChange={(e) => setCalendarMonths(Number(e.target.value))}
+              className="calendar-dropdown"
+            >
+              <option value={1}>1 Month</option>
+              <option value={2}>2 Months</option>
+              <option value={3}>3 Months</option>
+              <option value={6}>6 Months</option>
+            </select>
+          </div>
+        </div>
+        
+        <div className="calendar-grid">
+          {Array.from({ length: calendarMonths }, (_, monthOffset) => {
+            const currentMonth = new Date();
+            currentMonth.setMonth(currentMonth.getMonth() - monthOffset);
+            
+            return (
+              <div key={monthOffset} className="month-calendar">
+                <div className="month-header">
+                  <h3>{currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</h3>
+                </div>
+                <div className="calendar-days">
+                  <div className="day-headers">
+                    {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(day => (
+                      <div key={day} className="day-header">{day}</div>
+                    ))}
+                  </div>
+                  <div className="days-grid">
+                    {generateCalendarDays(currentMonth, user.transactions).map((day, index) => (
+                      <div 
+                        key={index} 
+                        className={`calendar-day ${day.type} ${day.isEmpty ? 'empty' : ''}`}
+                        title={day.tooltip}
+                      >
+                        <span className="day-number">{day.day}</span>
+                        {day.amount && <span className="day-amount">₹{day.amount}</span>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 

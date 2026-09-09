@@ -271,7 +271,6 @@ const AddTransactionModal = ({
                 value={category}
                 onChange={(event) => setCategory(event.target.value)}
               >
-
                 <option value="Business Trade">Business Trade</option>
                 <option value="Intraday Equity">Intraday Equity</option>
                 <option value="Swing Trading">Swing Trading</option>

@@ -1198,6 +1198,55 @@ const Dashboard = ({ user, onAdd }: Props) => {
         </div>
       </div>
 
+      {/* Profit & Loss Summary Section */}
+      <div className="profit-loss-section">
+        <div className="section-header">
+          <h2>Profit & Loss Summary</h2>
+          <p>Overview of your trading performance</p>
+        </div>
+        
+        <div className="profit-loss-cards">
+          <div className="profit-loss-card profit-card">
+            <div className="card-header">
+              <TrendingUp size={20} />
+              <span>Total Profit</span>
+            </div>
+            <div className="card-value">
+              {formatCurrency(totalProfit, user.currency)}
+            </div>
+            <div className="card-subtitle">
+              {profitCount} profitable trades
+            </div>
+          </div>
+
+          <div className="profit-loss-card loss-card">
+            <div className="card-header">
+              <TrendingDown size={20} />
+              <span>Total Loss</span>
+            </div>
+            <div className="card-value">
+              {formatCurrency(totalLoss, user.currency)}
+            </div>
+            <div className="card-subtitle">
+              {lossCount} losing trades
+            </div>
+          </div>
+
+          <div className="profit-loss-card net-card">
+            <div className="card-header">
+              <BarChart3 size={20} />
+              <span>Net Result</span>
+            </div>
+            <div className="card-value" style={{ color: netPerformance >= 0 ? '#10b981' : '#ef4444' }}>
+              {netPerformance >= 0 ? '+' : ''}{formatCurrency(netPerformance, user.currency)}
+            </div>
+            <div className="card-subtitle">
+              {winRate.toFixed(1)}% win rate
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="stats-grid">
         <StatCard
           title="Current balance"

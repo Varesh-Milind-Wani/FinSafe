@@ -1652,3 +1652,135 @@ input:focus, select:focus, textarea:focus {
   opacity: 0.5;
   cursor: not-allowed;
 }
+/* Profit & Loss Summary Section */
+.profit-loss-section {
+  margin: var(--spacing-xl) 0;
+  padding: var(--spacing-xl);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(59, 130, 246, 0.03));
+  border: 1.5px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  backdrop-filter: blur(8px);
+}
+
+.profit-loss-section .section-header {
+  text-align: center;
+  margin-bottom: var(--spacing-xl);
+}
+
+.profit-loss-section .section-header h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 var(--spacing-sm) 0;
+  letter-spacing: -0.4px;
+}
+
+.profit-loss-section .section-header p {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  margin: 0;
+}
+
+.profit-loss-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--spacing-lg);
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.profit-loss-card {
+  padding: var(--spacing-xl);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.profit-loss-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  border-color: var(--border-focus);
+}
+
+.profit-loss-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--accent-color), transparent);
+}
+
+.profit-card::before {
+  --accent-color: #10b981;
+}
+
+.loss-card::before {
+  --accent-color: #ef4444;
+}
+
+.net-card::before {
+  --accent-color: #3b82f6;
+}
+
+.profit-loss-card .card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.profit-card .card-header {
+  color: #10b981;
+}
+
+.loss-card .card-header {
+  color: #ef4444;
+}
+
+.net-card .card-header {
+  color: #3b82f6;
+}
+
+.profit-loss-card .card-header span {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.profit-loss-card .card-value {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-sm);
+  font-family: 'Courier New', monospace;
+  letter-spacing: -0.5px;
+}
+
+.profit-loss-card .card-subtitle {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  font-weight: 500;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .profit-loss-cards {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+  
+  .profit-loss-section {
+    margin: var(--spacing-lg) 0;
+    padding: var(--spacing-lg);
+  }
+  
+  .profit-loss-card .card-value {
+    font-size: 24px;
+  }
+}

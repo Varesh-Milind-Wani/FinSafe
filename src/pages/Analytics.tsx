@@ -10,6 +10,7 @@ import {
   TrendingUp,
   TrendingDown,
   Wallet,
+  DollarSign,
 } from "lucide-react";
 
 import ChartPanel from "../components/ChartPanel";
@@ -73,6 +74,12 @@ const Analytics = ({ user }: Props) => {
   const lossCount = user.transactions.filter(
     (transaction) => transaction.type === "loss"
   ).length;
+
+  const totalCost = useMemo(() => {
+    return user.transactions.reduce((sum, transaction) => {
+      return sum + (transaction.costAmount ?? 0);
+    }, 0);
+  }, [user.transactions]);
 
   const historySummary = useMemo(() => {
     const now = new Date();
@@ -510,6 +517,17 @@ const Analytics = ({ user }: Props) => {
             {formatMoney(user.currentBalance ?? (user.startingBalance + totalProfit - totalLoss))}
           </div>
           <div className="stat-trend positive">Live account balance</div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-card-top">
+            <div className="stat-icon">
+              <DollarSign size={19} />
+            </div>
+            <span>Cost</span>
+          </div>
+          <div className="stat-value">{formatMoney(totalCost)}</div>
+          <div className="stat-trend">All transaction cost</div>
         </div>
 
         <div className="stat-card">

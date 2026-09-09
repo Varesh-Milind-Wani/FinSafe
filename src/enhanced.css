@@ -637,10 +637,25 @@ input:focus, select:focus, textarea:focus {
 
 .search-box input {
   width: 100%;
-  padding: 9px 12px 9px 36px;
-  background-color: var(--bg-secondary);
+  padding: 10px 12px 10px 36px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.02) 0%, rgba(17, 24, 39, 0) 100%);
   border: 1px solid var(--border-standard);
+  border-radius: var(--radius-md);
   font-size: 13px;
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.search-box input:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(17, 24, 39, 0) 100%);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.search-box input::placeholder {
+  color: var(--text-quaternary);
 }
 
 .search-icon {

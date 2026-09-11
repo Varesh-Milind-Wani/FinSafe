@@ -125,8 +125,8 @@ const AddTransactionModal = ({
       : 0;
 
     const netAmount = currentType === "profit" 
-      ? activeAmount - appliedCost 
-      : activeAmount + appliedCost;
+      ? Math.max(0, activeAmount - appliedCost)  // Profit after costs (can't be negative)
+      : activeAmount;  // Loss is just the loss amount (costs don't increase losses)
 
     const transaction: Transaction = {
       id: initialTransaction?.id ?? crypto.randomUUID(),

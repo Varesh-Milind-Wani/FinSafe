@@ -46,6 +46,9 @@ const ChartPanel = ({
 
       <div className="chart-container">
         {children}
+        <div className="chart-interaction-hint">
+          Mouse wheel: Zoom • Double-click: Reset
+        </div>
       </div>
     </section>
   );

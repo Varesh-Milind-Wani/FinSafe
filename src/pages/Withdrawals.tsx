@@ -239,35 +239,19 @@ const Withdrawals = ({ user, onSave }: Props) => {
       >
         <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(30, 39, 56, 0.6)" }}>
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-            <div style={{ flex: 1, position: "relative" }}>
-              <Search size={16} style={{ position: "absolute", left: 12, top: 10, color: "#5e6b80" }} />
+            <div className="search-box">
+              <Search size={16} className="search-icon" />
               <input
                 type="text"
                 placeholder="Search withdrawals..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "10px 12px 10px 36px",
-                  background: "rgba(10, 14, 24, 0.8)",
-                  border: "1px solid rgba(30, 39, 56, 0.8)",
-                  borderRadius: 6,
-                  color: "#e8edf5",
-                  fontSize: 14,
-                }}
               />
             </div>
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value as any)}
-              style={{
-                padding: "10px 12px",
-                background: "rgba(10, 14, 24, 0.8)",
-                border: "1px solid rgba(30, 39, 56, 0.8)",
-                borderRadius: 6,
-                color: "#e8edf5",
-                fontSize: 14,
-              }}
+              className="filter-dropdown"
             >
               <option value="all">All Status</option>
               <option value="completed">Completed</option>

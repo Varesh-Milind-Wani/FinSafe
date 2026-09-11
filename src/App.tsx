@@ -90,8 +90,28 @@ const App = () => {
       transactions: nextTransactions,
     };
 
-    updateUser(updatedUser);
-    setUser(updatedUser);
+    // Force recalculate current balance using net amounts (after costs)
+    // Don't override manual balance from Settings unless transaction changed
+    const shouldUpdateBalance = !transactionExists; // Only update if adding new transaction
+    
+    let recalculatedBalance = user.currentBalance;
+    if (shouldUpdateBalance || user.currentBalance === undefined) {
+      recalculatedBalance = updatedUser.startingBalance + 
+        updatedUser.transactions
+          .filter(t => t.type === "profit")
+          .reduce((sum, t) => sum + t.amount, 0) -
+        updatedUser.transactions
+          .filter(t => t.type === "loss")
+          .reduce((sum, t) => sum + t.amount, 0);
+    }
+
+    const finalUser: UserAccount = {
+      ...updatedUser,
+      currentBalance: recalculatedBalance,
+    };
+
+    updateUser(finalUser);
+    setUser(finalUser);
     setModalOpen(false);
     setEditingTransaction(null);
   };
@@ -108,18 +128,30 @@ const App = () => {
       return;
     }
 
+    const filteredTransactions = user.transactions.filter(
+      (transaction) => transaction.id !== id
+    );
+
+    // Recalculate balance after deletion using net amounts (after costs)
+    // Only update if no manual balance override exists
+    let recalculatedBalance = user.currentBalance;
+    if (user.currentBalance === undefined) {
+      recalculatedBalance = user.startingBalance + 
+        filteredTransactions
+          .filter(t => t.type === "profit")
+          .reduce((sum, t) => sum + t.amount, 0) -
+        filteredTransactions
+          .filter(t => t.type === "loss")
+          .reduce((sum, t) => sum + t.amount, 0);
+    }
+
     const updatedUser: UserAccount = {
       ...user,
-
-      transactions:
-        user.transactions.filter(
-          (transaction) =>
-            transaction.id !== id
-        ),
+      transactions: filteredTransactions,
+      currentBalance: recalculatedBalance,
     };
 
     updateUser(updatedUser);
-
     setUser(updatedUser);
   };
 

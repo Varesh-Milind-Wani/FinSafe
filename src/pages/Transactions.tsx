@@ -117,7 +117,7 @@ const Transactions = ({
         }
         onDelete={onDelete}
         onEdit={onEdit}
-        startingBalance={user.startingBalance}
+        user={user}
       />
     </div>
   );

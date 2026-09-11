@@ -637,36 +637,46 @@ input:focus, select:focus, textarea:focus {
 
 .search-box input {
   width: 100%;
-  padding: 10px 12px 10px 36px;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.02) 0%, rgba(17, 24, 39, 0) 100%);
-  border: 1px solid var(--border-standard);
-  border-radius: var(--radius-md);
-  font-size: 13px;
-  color: var(--text-primary);
-  transition: all 0.2s ease;
-  font-weight: 500;
+  padding: 12px 16px 12px 40px !important;
+  background: linear-gradient(135deg, rgba(45, 55, 72, 0.95), rgba(74, 85, 104, 0.9)) !important;
+  border: 1.5px solid rgba(59, 130, 246, 0.4) !important;
+  border-radius: 10px !important;
+  font-size: 14px !important;
+  color: #f1f5f9 !important;
+  transition: all 0.3s ease !important;
+  font-weight: 500 !important;
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.25),
+    0 1px 3px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+  outline: none !important;
 }
 
 .search-box input:focus {
-  outline: none;
-  border-color: var(--accent-primary);
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(17, 24, 39, 0) 100%);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.7) !important;
+  background: linear-gradient(135deg, rgba(51, 65, 85, 1.0), rgba(71, 85, 105, 0.95)) !important;
+  box-shadow: 
+    0 0 0 3px rgba(59, 130, 246, 0.2),
+    0 4px 12px rgba(59, 130, 246, 0.15),
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
 }
 
 .search-box input::placeholder {
-  color: var(--text-quaternary);
+  color: rgba(203, 213, 225, 0.8) !important;
+  font-weight: 500 !important;
 }
 
 .search-icon {
   position: absolute;
-  left: 12px;
+  left: 14px !important;
   top: 50%;
   transform: translateY(-50%);
-  color: var(--text-quaternary);
+  color: rgba(59, 130, 246, 0.8) !important;
   width: 16px;
   height: 16px;
   pointer-events: none;
+  z-index: 10 !important;
 }
 
 .table-filters {
@@ -2532,4 +2542,614 @@ html::-webkit-scrollbar, body::-webkit-scrollbar {
   background: rgba(59, 130, 246, 0.1);
   border-radius: 4px;
   border-left: 2px solid var(--primary);
+}
+/* ===== DARK DASHBOARD-STYLE TRADING CALENDAR ===== */
+
+.dashboard-section {
+  margin: 32px 0;
+}
+
+.calendar-dashboard-grid {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+}
+
+.calendar-card {
+  background: linear-gradient(145deg, #0f1419 0%, #1a202c 100%);
+  border: 1px solid rgba(59, 130, 246, 0.15);
+  border-radius: 16px;
+  padding: 0;
+  overflow: hidden;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+}
+
+.calendar-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 16px 48px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  border-color: rgba(59, 130, 246, 0.25);
+}
+
+.calendar-card-header {
+  background: linear-gradient(135deg, rgba(15, 20, 25, 0.9), rgba(26, 32, 44, 0.8));
+  border-bottom: 1px solid rgba(59, 130, 246, 0.1);
+  padding: 20px 24px;
+}
+
+.calendar-card-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.calendar-card-title svg {
+  color: #60a5fa;
+  background: rgba(59, 130, 246, 0.08);
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(59, 130, 246, 0.15);
+}
+
+.calendar-card-title h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #f1f5f9;
+  margin: 0;
+}
+
+.calendar-card-content {
+  padding: 20px 24px;
+  background: linear-gradient(145deg, rgba(15, 20, 25, 0.6), rgba(26, 32, 44, 0.4));
+}
+
+.calendar-day-headers {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 8px;
+}
+
+.calendar-day-header {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  padding: 8px 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: rgba(15, 20, 25, 0.4);
+  border-radius: 6px;
+  border: 1px solid rgba(59, 130, 246, 0.08);
+}
+
+.calendar-days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.calendar-day-cell {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: rgba(15, 20, 25, 0.6);
+  border: 1px solid rgba(51, 65, 85, 0.3);
+  padding: 6px 2px;
+  position: relative;
+}
+
+.calendar-day-cell:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.calendar-day-cell.empty {
+  background: rgba(15, 20, 25, 0.3);
+  border-color: rgba(51, 65, 85, 0.15);
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.calendar-day-cell.invisible {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  border: none;
+  background: transparent;
+}
+
+.calendar-day-cell.empty .day-number {
+  color: rgba(100, 116, 139, 0.4);
+}
+
+/* Dark Day Types */
+.calendar-day-cell.profit {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(52, 211, 153, 0.08));
+  border-color: rgba(16, 185, 129, 0.3);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.08);
+}
+
+.calendar-day-cell.profit:hover {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(52, 211, 153, 0.15));
+  border-color: rgba(16, 185, 129, 0.5);
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.15);
+}
+
+.calendar-day-cell.loss {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(248, 113, 113, 0.08));
+  border-color: rgba(239, 68, 68, 0.3);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.08);
+}
+
+.calendar-day-cell.loss:hover {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(248, 113, 113, 0.15));
+  border-color: rgba(239, 68, 68, 0.5);
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.15);
+}
+
+.calendar-day-cell.neutral {
+  background: linear-gradient(135deg, rgba(107, 114, 128, 0.12), rgba(156, 163, 175, 0.06));
+  border-color: rgba(107, 114, 128, 0.25);
+  box-shadow: 0 2px 8px rgba(107, 114, 128, 0.06);
+}
+
+.calendar-day-cell.neutral:hover {
+  background: linear-gradient(135deg, rgba(107, 114, 128, 0.2), rgba(156, 163, 175, 0.12));
+  border-color: rgba(107, 114, 128, 0.4);
+  box-shadow: 0 4px 16px rgba(107, 114, 128, 0.12);
+}
+
+.calendar-day-cell.today {
+  border: 2px solid #3b82f6 !important;
+  box-shadow: 
+    0 0 0 2px rgba(59, 130, 246, 0.15),
+    0 4px 12px rgba(59, 130, 246, 0.12) !important;
+}
+
+.calendar-day-cell .day-number {
+  font-size: 13px;
+  font-weight: 600;
+  color: #cbd5e1;
+  margin-bottom: 2px;
+  line-height: 1;
+}
+
+.calendar-day-cell .day-amount {
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1;
+  text-align: center;
+  opacity: 0.9;
+}
+
+.calendar-day-cell.profit .day-number {
+  color: #e2e8f0;
+}
+
+.calendar-day-cell.profit .day-amount {
+  color: #10b981;
+}
+
+.calendar-day-cell.loss .day-number {
+  color: #e2e8f0;
+}
+
+.calendar-day-cell.loss .day-amount {
+  color: #ef4444;
+}
+
+.calendar-day-cell.neutral .day-number {
+  color: #cbd5e1;
+}
+
+.calendar-day-cell.neutral .day-amount {
+  color: #9ca3af;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .calendar-dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-section {
+    margin: 24px 0;
+  }
+  
+  .calendar-card-header {
+    padding: 16px 20px;
+  }
+  
+  .calendar-card-title h3 {
+    font-size: 16px;
+  }
+  
+  .calendar-card-content {
+    padding: 16px 20px;
+  }
+  
+  .calendar-day-cell .day-amount {
+    font-size: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .calendar-dashboard-grid {
+    gap: 16px;
+  }
+  
+  .calendar-day-cell .day-amount {
+    display: none; /* Hide amounts on small screens */
+  }
+  
+  .calendar-day-cell {
+    aspect-ratio: 0.9;
+  }
+  
+  .calendar-day-cell .day-number {
+    font-size: 12px;
+  }
+}
+/* ===== P&L PAGE DAILY CONTENT STYLES ===== */
+
+.stat-card-wide {
+  grid-column: span 2;
+}
+
+.daily-pl-content {
+  padding-top: 16px;
+}
+
+.daily-pl-content .daily-pl-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(59, 130, 246, 0.1);
+}
+
+.daily-pl-content .daily-pl-item:last-child {
+  border-bottom: none;
+}
+
+.daily-pl-content .day-info {
+  flex: 1;
+}
+
+.daily-pl-content .day-date {
+  font-size: 13px;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+.daily-pl-content .day-amounts {
+  display: flex;
+  gap: 12px;
+  flex: 1;
+  justify-content: center;
+}
+
+.daily-pl-content .day-profit {
+  font-size: 12px;
+  font-weight: 600;
+  color: #10b981;
+}
+
+.daily-pl-content .day-loss {
+  font-size: 12px;
+  font-weight: 600;
+  color: #ef4444;
+}
+
+.daily-pl-content .day-net {
+  flex: 1;
+  text-align: right;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.daily-pl-content .day-net.positive {
+  color: #10b981;
+}
+
+.daily-pl-content .day-net.negative {
+  color: #ef4444;
+}
+
+@media (max-width: 768px) {
+  .stat-card-wide {
+    grid-column: span 1;
+  }
+  
+  .daily-pl-content .daily-pl-item {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+  
+  .daily-pl-content .day-amounts,
+  .daily-pl-content .day-net {
+    justify-content: center;
+    text-align: center;
+  }
+}
+/* ===== P&L 3-CARD GRID - FIXED ===== */
+
+.stats-grid-three {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-bottom: 32px;
+  width: 100%;
+}
+
+.stats-grid-three .stat-card {
+  min-height: 140px;
+  flex: 1;
+}
+
+/* Cost Card Styling */
+.stat-icon.cost {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(139, 92, 246, 0.1));
+  color: #a855f7;
+}
+
+.stat-value.cost {
+  color: #a855f7;
+}
+
+.stat-trend.neutral {
+  color: #94a3b8;
+}
+
+@media (max-width: 1200px) {
+  .stats-grid-three {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+}
+
+@media (max-width: 900px) {
+  .stats-grid-three {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+  }
+}
+
+@media (max-width: 600px) {
+  .stats-grid-three {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+}
+/* ===== HIDE BREADCRUMB BOX ON ALL PAGES ===== */
+
+.breadcrumb,
+.eyebrow {
+  display: none !important;
+}
+
+/* Hide any breadcrumb containers */
+.page-breadcrumb,
+.breadcrumb-container,
+.navigation-breadcrumb {
+  display: none !important;
+}
+/* ===== IMPROVED SEARCH BOX STYLING ===== */
+
+/* Global search input styling for consistency */
+input[type="text"][placeholder*="search" i],
+input[type="text"][placeholder*="Search" i],
+input[type="search"],
+input[placeholder*="Search"],
+input[placeholder*="category"],
+.search-input,
+.search-field {
+  background: linear-gradient(135deg, rgba(45, 55, 72, 0.95), rgba(74, 85, 104, 0.9)) !important;
+  border: 1.5px solid rgba(59, 130, 246, 0.4) !important;
+  border-radius: 10px !important;
+  padding: 12px 16px 12px 40px !important;
+  color: #f1f5f9 !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.25),
+    0 1px 3px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+  outline: none !important;
+}
+
+/* Search input focus state */
+input[type="text"][placeholder*="search" i]:focus,
+input[type="text"][placeholder*="Search" i]:focus,
+input[type="search"]:focus,
+input[placeholder*="Search"]:focus,
+input[placeholder*="category"]:focus,
+.search-input:focus,
+.search-field:focus {
+  border-color: rgba(59, 130, 246, 0.7) !important;
+  background: linear-gradient(135deg, rgba(51, 65, 85, 1.0), rgba(71, 85, 105, 0.95)) !important;
+  box-shadow: 
+    0 0 0 3px rgba(59, 130, 246, 0.2),
+    0 4px 12px rgba(59, 130, 246, 0.15),
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Search input placeholder */
+input[type="text"][placeholder*="search" i]::placeholder,
+input[type="text"][placeholder*="Search" i]::placeholder,
+input[type="search"]::placeholder,
+input[placeholder*="Search"]::placeholder,
+input[placeholder*="category"]::placeholder,
+.search-input::placeholder,
+.search-field::placeholder {
+  color: rgba(203, 213, 225, 0.8) !important;
+  font-weight: 500 !important;
+}
+
+/* Search icon styling */
+.search-icon,
+input[type="search"] + .search-icon,
+.search-input-container .search-icon {
+  position: absolute !important;
+  left: 14px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  color: rgba(59, 130, 246, 0.8) !important;
+  pointer-events: none !important;
+  z-index: 10 !important;
+}
+
+/* Search container wrapper */
+.search-container,
+.search-wrapper {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+/* Filter dropdowns next to search */
+select.filter-dropdown,
+.dropdown-filter {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(51, 65, 85, 0.6)) !important;
+  border: 1.5px solid rgba(59, 130, 246, 0.25) !important;
+  border-radius: 10px !important;
+  padding: 10px 14px !important;
+  color: #e2e8f0 !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  outline: none !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
+select.filter-dropdown:hover,
+.dropdown-filter:hover {
+  border-color: rgba(59, 130, 246, 0.5) !important;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(51, 65, 85, 0.8)) !important;
+}
+
+select.filter-dropdown:focus,
+.dropdown-filter:focus {
+  border-color: rgba(59, 130, 246, 0.7) !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+}
+
+/* Search and filter row container */
+.search-filters-row,
+.table-controls {
+  display: flex !important;
+  gap: 16px !important;
+  align-items: center !important;
+  margin-bottom: 20px !important;
+  flex-wrap: wrap !important;
+}
+
+/* ===== TRADINGVIEW-STYLE CHART ZOOM EFFECTS ===== */
+
+/* Chart container hover effects */
+.chart-container {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.chart-container:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 8px 25px rgba(0, 0, 0, 0.15),
+    0 3px 10px rgba(59, 130, 246, 0.1);
+}
+
+/* Chart crosshair cursor on zoom-enabled charts */
+.chart-container canvas,
+.chart-container svg {
+  cursor: crosshair;
+}
+
+.chart-container.panning canvas,
+.chart-container.panning svg {
+  cursor: grabbing;
+}
+
+/* Chart loading animation for zoom transitions */
+@keyframes chartZoomTransition {
+  0% { opacity: 0.7; transform: scale(0.98); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.chart-container.zooming {
+  animation: chartZoomTransition 0.4s ease-out;
+}
+
+/* Highcharts reset zoom button enhancement */
+.highcharts-reset-zoom {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.8), rgba(59, 130, 246, 0.9)) !important;
+  border: 1px solid rgba(59, 130, 246, 1) !important;
+  border-radius: 6px !important;
+  color: #ffffff !important;
+  font-family: 'Inter', sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  padding: 6px 12px !important;
+  transition: all 0.2s ease !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.highcharts-reset-zoom:hover {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 1), rgba(79, 143, 246, 1)) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4) !important;
+}
+
+/* Chart interaction instructions */
+.chart-interaction-hint {
+  position: absolute;
+  bottom: 10px;
+  left: 15px;
+  font-size: 10px;
+  color: rgba(148, 163, 184, 0.6);
+  font-weight: 500;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.chart-container:hover .chart-interaction-hint {
+  opacity: 1;
+}
+
+@media (max-width: 768px) {
+  .search-filters-row,
+  .table-controls {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+  
+  input[type="search"],
+  input[placeholder*="Search"],
+  input[placeholder*="category"] {
+    padding: 10px 14px 10px 36px !important;
+    font-size: 13px !important;
+  }
 }

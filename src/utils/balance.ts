@@ -1,45 +1,52 @@
 import type { UserAccount } from '../types/finance';
 
 /**
- * Calculate current balance consistently across all pages
- * Uses manual currentBalance if set, otherwise calculates from transactions
- * Uses grossAmount for all calculations for consistency
+ * Get the authoritative current balance - respects manual overrides from Settings
+ * This should be used by ALL pages for consistent balance display
  */
-export const calculateCurrentBalance = (user: UserAccount): number => {
-  // If there's a manual balance override, use it (for rebalancing)
-  if (user.currentBalance !== undefined && user.currentBalance !== null) {
+export const getAuthoritativeBalance = (user: UserAccount): number => {
+  // If user has manually set a balance in Settings, use that
+  if (user.currentBalance !== undefined && user.currentBalance !== null && user.currentBalance >= 0) {
     return user.currentBalance;
   }
+  
+  // Otherwise calculate from transactions using net amounts
+  return calculateCurrentBalance(user);
+};
 
-  // Otherwise calculate from transactions using gross amounts (before cost deduction)
+/**
+ * Calculate current balance from transactions only (ignoring manual overrides)
+ * Uses net amounts (after costs) for actual balance calculations
+ */
+export const calculateCurrentBalance = (user: UserAccount): number => {
+  // Calculate balance using net amounts (after cost deduction)
   const totalProfit = user.transactions
     .filter((transaction) => transaction.type === "profit")
-    .reduce((sum, transaction) => sum + (transaction.grossAmount ?? transaction.amount), 0);
+    .reduce((sum, transaction) => sum + transaction.amount, 0);
 
   const totalLoss = user.transactions
     .filter((transaction) => transaction.type === "loss")
-    .reduce((sum, transaction) => sum + (transaction.grossAmount ?? transaction.amount), 0);
+    .reduce((sum, transaction) => sum + transaction.amount, 0);
 
   return user.startingBalance + totalProfit - totalLoss;
 };
 
 /**
  * Calculate comprehensive balance statistics
- * Uses manual currentBalance if set for balance calculation
- * Uses grossAmount for display of total profit/loss amounts
+ * Uses authoritative balance for consistency across all pages
  */
 export const calculateBalanceStats = (user: UserAccount) => {
-  // For display amounts, use gross amounts (before cost deduction)  
+  // Use net amounts (after cost deduction) for profit/loss totals
   const totalProfit = user.transactions
     .filter((transaction) => transaction.type === "profit")
-    .reduce((sum, transaction) => sum + (transaction.grossAmount ?? transaction.amount), 0);
+    .reduce((sum, transaction) => sum + transaction.amount, 0);
 
   const totalLoss = user.transactions
     .filter((transaction) => transaction.type === "loss")
-    .reduce((sum, transaction) => sum + (transaction.grossAmount ?? transaction.amount), 0);
+    .reduce((sum, transaction) => sum + transaction.amount, 0);
 
-  // Use manual balance if set, otherwise calculate from net transaction amounts
-  const currentBalance = calculateCurrentBalance(user);
+  // Get authoritative balance (respects Settings manual override)
+  const currentBalance = getAuthoritativeBalance(user);
   const netPerformance = currentBalance - user.startingBalance;
 
   return {

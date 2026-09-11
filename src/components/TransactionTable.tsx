@@ -13,21 +13,21 @@ interface Props {
   transactions: Transaction[];
   onDelete: (id: string) => void;
   onEdit: (transaction: Transaction) => void;
-  startingBalance?: number;
+  user: any; // Add user to get authoritative balance
 }
 
 const TransactionTable = ({
   transactions,
   onDelete,
   onEdit,
-  startingBalance = 0,
+  user,
 }: Props) => {
   const [search, setSearch] = useState("");
   const [sortOrder, setSortOrder] =
     useState<"newest" | "oldest">("newest");
   const [typeFilter, setTypeFilter] = useState<"all" | "profit" | "loss">("all");
 
-  // Calculate running balance for each transaction
+  // Calculate running balance for each transaction using authoritative starting point
   const transactionsWithBalance = useMemo(() => {
     const sorted = [...transactions].sort((left, right) => {
       const leftDate = new Date(left.date).getTime();
@@ -35,7 +35,8 @@ const TransactionTable = ({
       return leftDate - rightDate;
     });
 
-    let runningBalance = startingBalance;
+    // Start with user's starting balance, not authoritative balance
+    let runningBalance = user.startingBalance;
     return sorted.map((transaction) => ({
       ...transaction,
       balance: (() => {
@@ -48,7 +49,7 @@ const TransactionTable = ({
         return runningBalance;
       })(),
     }));
-  }, [transactions, startingBalance]);
+  }, [transactions, user.startingBalance]);
 
   const filteredTransactions = useMemo(() => {
     const value = search.toLowerCase();

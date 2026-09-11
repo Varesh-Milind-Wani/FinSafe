@@ -2,11 +2,7 @@ import { useMemo, useState } from "react";
 import {
   TrendingUp,
   TrendingDown,
-  BarChart3,
-  Activity,
   Calendar,
-  Target,
-  Percent,
   DollarSign,
 } from "lucide-react";
 import type { UserAccount } from "../types/finance";
@@ -48,16 +44,17 @@ const generateCalendarDays = (month: Date, transactions: any[]) => {
   const year = month.getFullYear();
   const monthIndex = month.getMonth();
   const firstDay = new Date(year, monthIndex, 1);
+  
+  // Calculate the start date (Sunday before the first day of the month)
   const startDate = new Date(firstDay);
-  startDate.setDate(startDate.getDate() - firstDay.getDay());
+  const dayOfWeek = firstDay.getDay(); // 0 = Sunday, 1 = Monday, etc.
+  startDate.setDate(firstDay.getDate() - dayOfWeek);
   
   const days = [];
   const current = new Date(startDate);
   
   // Group transactions by date - use local date formatting
   const transactionsByDate: Record<string, { profit: number; loss: number; transactions: any[] }> = {};
-  
-  console.log('Processing transactions for calendar:', transactions.length);
   
   transactions.forEach(transaction => {
     const date = parseLocalDate(transaction.date);
@@ -67,8 +64,6 @@ const generateCalendarDays = (month: Date, transactions: any[]) => {
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const day = String(date.getDate()).padStart(2, '0');
       const dateKey = `${year}-${month}-${day}`;
-      
-      console.log('Transaction date:', transaction.date, '-> parsed:', date, '-> key:', dateKey);
       
       if (!transactionsByDate[dateKey]) {
         transactionsByDate[dateKey] = { profit: 0, loss: 0, transactions: [] };
@@ -81,14 +76,10 @@ const generateCalendarDays = (month: Date, transactions: any[]) => {
         transactionsByDate[dateKey].loss += amount;
       }
       transactionsByDate[dateKey].transactions.push(transaction);
-    } else {
-      console.warn('Failed to parse date:', transaction.date);
     }
   });
   
-  console.log('Transactions by date:', transactionsByDate);
-  
-  // Generate 42 days (6 weeks)
+  // Generate 42 days (6 weeks) for proper calendar layout
   for (let i = 0; i < 42; i++) {
     // Create date key for current calendar day
     const year = current.getFullYear();
@@ -101,21 +92,27 @@ const generateCalendarDays = (month: Date, transactions: any[]) => {
     
     let dayType = 'neutral';
     let amount = null;
-    let tooltip = current.toLocaleDateString();
+    let tooltip = current.toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
     
     if (dayData && isCurrentMonth) {
       const netAmount = dayData.profit - dayData.loss;
       if (netAmount > 0) {
         dayType = 'profit';
         amount = netAmount;
-        tooltip = `${tooltip} - Profit: ₹${dayData.profit}, Loss: ₹${dayData.loss}, Net: +₹${netAmount}`;
+        tooltip = `${tooltip}\nProfit: ₹${dayData.profit.toLocaleString()}\nLoss: ₹${dayData.loss.toLocaleString()}\nNet: +₹${netAmount.toLocaleString()}`;
       } else if (netAmount < 0) {
         dayType = 'loss';
         amount = Math.abs(netAmount);
-        tooltip = `${tooltip} - Profit: ₹${dayData.profit}, Loss: ₹${dayData.loss}, Net: -₹${Math.abs(netAmount)}`;
+        tooltip = `${tooltip}\nProfit: ₹${dayData.profit.toLocaleString()}\nLoss: ₹${dayData.loss.toLocaleString()}\nNet: -₹${Math.abs(netAmount).toLocaleString()}`;
       } else if (dayData.profit > 0 || dayData.loss > 0) {
         dayType = 'neutral';
-        tooltip = `${tooltip} - Profit: ₹${dayData.profit}, Loss: ₹${dayData.loss}, Net: ₹0`;
+        amount = dayData.profit + dayData.loss; // Show total volume for breakeven days
+        tooltip = `${tooltip}\nProfit: ₹${dayData.profit.toLocaleString()}\nLoss: ₹${dayData.loss.toLocaleString()}\nNet: ₹0 (Breakeven)`;
       }
     }
     
@@ -125,7 +122,12 @@ const generateCalendarDays = (month: Date, transactions: any[]) => {
       amount: amount,
       isEmpty: !isCurrentMonth,
       tooltip: tooltip,
-      hasData: !!dayData
+      hasData: !!dayData,
+      isToday: isCurrentMonth && 
+        current.getDate() === new Date().getDate() && 
+        current.getMonth() === new Date().getMonth() && 
+        current.getFullYear() === new Date().getFullYear(),
+      isVisible: isCurrentMonth  // Add visibility flag for current month only
     });
     
     current.setDate(current.getDate() + 1);
@@ -152,6 +154,11 @@ const ProfitLoss = ({ user }: Props) => {
     const avgProfitPerTrade = profitCount > 0 ? balanceStats.totalProfit / profitCount : 0;
     const avgLossPerTrade = lossCount > 0 ? balanceStats.totalLoss / lossCount : 0;
 
+    // Calculate total costs from all transactions
+    const totalCosts = user.transactions.reduce((sum, transaction) => {
+      return sum + (transaction.costAmount || 0);
+    }, 0);
+
     return {
       ...balanceStats,
       profitCount,
@@ -160,49 +167,20 @@ const ProfitLoss = ({ user }: Props) => {
       winRate,
       avgProfitPerTrade,
       avgLossPerTrade,
+      totalCosts,
     };
   }, [user.transactions, user.startingBalance]);
 
-  const dailyPL = useMemo(() => {
-    const dailyData: Record<string, { profit: number; loss: number; net: number }> = {};
-    
-    user.transactions.forEach((transaction) => {
-      const date = new Date(transaction.date);
-      const dateKey = date.toISOString().split('T')[0];
-      
-      if (!dailyData[dateKey]) {
-        dailyData[dateKey] = { profit: 0, loss: 0, net: 0 };
-      }
-      
-      const amount = transaction.grossAmount ?? transaction.amount;
-      if (transaction.type === 'profit') {
-        dailyData[dateKey].profit += amount;
-        dailyData[dateKey].net += amount;
-      } else {
-        dailyData[dateKey].loss += amount;
-        dailyData[dateKey].net -= amount;
-      }
-    });
-    
-    return Object.entries(dailyData)
-      .map(([date, data]) => ({
-        date: new Date(date),
-        ...data,
-      }))
-      .sort((a, b) => b.date.getTime() - a.date.getTime())
-      .slice(0, 10);
-  }, [user.transactions]);
-
   return (
     <div className="page-content">
-      <div className="page-heading">
+      <div className="dashboard-header">
         <div>
           <span className="eyebrow">P&L ANALYSIS</span>
-          <h1>Profit & Loss</h1>
+          <h1>Profit & Loss Analysis</h1>
           <p>Comprehensive view of your trading performance and profitability.</p>
         </div>
         
-        <div className="heading-actions">
+        <div className="dashboard-actions">
           <select 
             value={selectedPeriod} 
             onChange={(e) => setSelectedPeriod(e.target.value)}
@@ -217,60 +195,55 @@ const ProfitLoss = ({ user }: Props) => {
         </div>
       </div>
 
-      {/* P&L Overview Cards */}
-      <div className="pl-overview-grid">
-        <div className="pl-card profit-card">
-          <div className="pl-card-header">
-            <TrendingUp size={24} />
-            <h3>Total Profit</h3>
+      {/* P&L Overview Cards - Profit, Loss & Cost */}
+      <div className="stats-grid-three">
+        <div className="stat-card">
+          <div className="stat-card-top">
+            <div className="stat-icon profit">
+              <TrendingUp size={19} />
+            </div>
+            <span>Total Profit</span>
           </div>
-          <div className="pl-card-value profit">
-            {formatCurrency(stats.totalProfit, user.currency)}
-          </div>
-          <div className="pl-card-subtitle">
-            {stats.profitCount} profitable trades
-          </div>
+          <div className="stat-value positive">{formatCurrency(stats.totalProfit, user.currency)}</div>
+          <div className="stat-trend positive">{stats.profitCount} profitable trades</div>
         </div>
 
-        <div className="pl-card loss-card">
-          <div className="pl-card-header">
-            <TrendingDown size={24} />
-            <h3>Total Loss</h3>
+        <div className="stat-card">
+          <div className="stat-card-top">
+            <div className="stat-icon loss">
+              <TrendingDown size={19} />
+            </div>
+            <span>Total Loss</span>
           </div>
-          <div className="pl-card-value loss">
-            {formatCurrency(stats.totalLoss, user.currency)}
-          </div>
-          <div className="pl-card-subtitle">
-            {stats.lossCount} losing trades
-          </div>
+          <div className="stat-value negative">{formatCurrency(stats.totalLoss, user.currency)}</div>
+          <div className="stat-trend negative">{stats.lossCount} losing trades</div>
         </div>
 
-        <div className="pl-card net-card">
-          <div className="pl-card-header">
-            <BarChart3 size={24} />
-            <h3>Net P&L</h3>
+        <div className="stat-card">
+          <div className="stat-card-top">
+            <div className="stat-icon cost">
+              <DollarSign size={19} />
+            </div>
+            <span>Total Cost</span>
           </div>
-          <div className={`pl-card-value ${stats.netPerformance >= 0 ? 'profit' : 'loss'}`}>
-            {stats.netPerformance >= 0 ? '+' : ''}{formatCurrency(stats.netPerformance, user.currency)}
-          </div>
-          <div className="pl-card-subtitle">
-            {stats.winRate.toFixed(1)}% win rate
-          </div>
+          <div className="stat-value cost">{formatCurrency(stats.totalCosts, user.currency)}</div>
+          <div className="stat-trend neutral">All transaction costs</div>
         </div>
       </div>
 
-      {/* Trading Calendar */}
-      <div className="calendar-section">
-        <div className="calendar-header">
-          <div className="calendar-title">
-            <Calendar size={20} />
-            <h2>Trading Calendar</h2>
+      {/* Trading Calendar - Dashboard Style */}
+      <div className="dashboard-section">
+        <div className="dashboard-header">
+          <div>
+            <span className="eyebrow">TRADING CALENDAR</span>
+            <h2>Daily Performance Overview</h2>
+            <p>Track your daily trading performance at a glance</p>
           </div>
-          <div className="calendar-controls">
+          <div className="dashboard-actions">
             <select 
               value={calendarMonths} 
               onChange={(e) => setCalendarMonths(Number(e.target.value))}
-              className="calendar-dropdown"
+              className="period-selector"
             >
               <option value={1}>1 Month</option>
               <option value={2}>2 Months</option>
@@ -280,32 +253,41 @@ const ProfitLoss = ({ user }: Props) => {
           </div>
         </div>
         
-        <div className="calendar-grid">
+        <div className="calendar-dashboard-grid">
           {Array.from({ length: calendarMonths }, (_, monthOffset) => {
             const currentMonth = new Date();
             currentMonth.setMonth(currentMonth.getMonth() - monthOffset);
             
             return (
-              <div key={monthOffset} className="month-calendar">
-                <div className="month-header">
-                  <h3>{currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</h3>
+              <div key={monthOffset} className="calendar-card">
+                <div className="calendar-card-header">
+                  <div className="calendar-card-title">
+                    <Calendar size={20} />
+                    <h3>{currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</h3>
+                  </div>
                 </div>
-                <div className="calendar-days">
-                  <div className="day-headers">
+                
+                <div className="calendar-card-content">
+                  <div className="calendar-day-headers">
                     {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(day => (
-                      <div key={day} className="day-header">{day}</div>
+                      <div key={day} className="calendar-day-header">{day}</div>
                     ))}
                   </div>
-                  <div className="days-grid">
+                  
+                  <div className="calendar-days-grid">
                     {generateCalendarDays(currentMonth, user.transactions).map((day, index) => (
-                      <div 
-                        key={index} 
-                        className={`calendar-day ${day.type} ${day.isEmpty ? 'empty' : ''}`}
-                        title={day.tooltip}
-                      >
-                        <span className="day-number">{day.day}</span>
-                        {day.amount && <span className="day-amount">₹{day.amount}</span>}
-                      </div>
+                      day.isVisible ? (
+                        <div 
+                          key={index} 
+                          className={`calendar-day-cell ${day.type} ${day.isEmpty ? 'empty' : ''} ${day.isToday ? 'today' : ''}`}
+                          title={day.tooltip}
+                        >
+                          <span className="day-number">{day.day}</span>
+                          {day.amount && <span className="day-amount">₹{Math.floor(day.amount)}</span>}
+                        </div>
+                      ) : (
+                        <div key={index} className="calendar-day-cell invisible"></div>
+                      )
                     ))}
                   </div>
                 </div>
@@ -315,70 +297,6 @@ const ProfitLoss = ({ user }: Props) => {
         </div>
       </div>
 
-      {/* Performance Metrics */}
-      <div className="performance-metrics">
-        <h2>Performance Metrics</h2>
-        <div className="metrics-grid">
-          <div className="metric-item">
-            <Activity size={20} />
-            <div className="metric-content">
-              <span className="metric-label">Total Trades</span>
-              <span className="metric-value">{stats.totalTrades}</span>
-            </div>
-          </div>
-
-          <div className="metric-item">
-            <Percent size={20} />
-            <div className="metric-content">
-              <span className="metric-label">Win Rate</span>
-              <span className="metric-value">{stats.winRate.toFixed(1)}%</span>
-            </div>
-          </div>
-
-          <div className="metric-item">
-            <Target size={20} />
-            <div className="metric-content">
-              <span className="metric-label">Avg Profit/Trade</span>
-              <span className="metric-value">{formatCurrency(stats.avgProfitPerTrade, user.currency)}</span>
-            </div>
-          </div>
-
-          <div className="metric-item">
-            <DollarSign size={20} />
-            <div className="metric-content">
-              <span className="metric-label">Avg Loss/Trade</span>
-              <span className="metric-value">{formatCurrency(stats.avgLossPerTrade, user.currency)}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Daily P&L History */}
-      <div className="daily-pl-section">
-        <h2>Recent Daily P&L</h2>
-        <div className="daily-pl-list">
-          {dailyPL.map((day, index) => (
-            <div key={index} className="daily-pl-item">
-              <div className="day-info">
-                <span className="day-date">
-                  {day.date.toLocaleDateString('en-US', { 
-                    weekday: 'short', 
-                    month: 'short', 
-                    day: 'numeric' 
-                  })}
-                </span>
-              </div>
-              <div className="day-amounts">
-                <span className="day-profit">+{formatCurrency(day.profit, user.currency)}</span>
-                <span className="day-loss">-{formatCurrency(day.loss, user.currency)}</span>
-              </div>
-              <div className={`day-net ${day.net >= 0 ? 'positive' : 'negative'}`}>
-                {day.net >= 0 ? '+' : ''}{formatCurrency(day.net, user.currency)}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 };

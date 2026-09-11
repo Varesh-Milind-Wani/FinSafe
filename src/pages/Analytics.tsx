@@ -74,6 +74,11 @@ const Analytics = ({ user, onSave }: Props) => {
   const balanceStats = calculateBalanceStats(user);
   const { totalProfit, totalLoss } = balanceStats;
 
+  // Calculate total costs from all transactions
+  const totalCosts = user.transactions.reduce((sum, transaction) => {
+    return sum + (transaction.costAmount || 0);
+  }, 0);
+
   const totalMovement = totalProfit + totalLoss;
 
   const profitCount = user.transactions.filter(
@@ -582,7 +587,7 @@ const Analytics = ({ user, onSave }: Props) => {
             </div>
           ) : (
             <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
-              <div className="stat-value">{formatMoney(Number(costInput))}</div>
+              <div className="stat-value">{formatMoney(totalCosts)}</div>
               <button
                 type="button"
                 onClick={() => setIsEditingCost(true)}

@@ -16,7 +16,7 @@ import {
 
 import type { DefaultCostSchedule, UserAccount } from "../types/finance";
 import { formatCurrency } from "../utils/money";
-import { calculateCurrentBalance } from "../utils/balance";
+import { getAuthoritativeBalance } from "../utils/balance";
 import { addSampleTradesToUser } from "../utils/storage";
 
 const getCostForDate = (
@@ -57,8 +57,8 @@ interface Props {
 
 const Settings = ({ user, onSave }: Props) => {
   const currentBalance = useMemo(() => {
-    return calculateCurrentBalance(user);
-  }, [user.startingBalance, user.transactions]);
+    return getAuthoritativeBalance(user);
+  }, [user.startingBalance, user.transactions, user.currentBalance]);
 
   const [name, setName] = useState(user.name);
   const [email, setEmail] = useState(user.email);

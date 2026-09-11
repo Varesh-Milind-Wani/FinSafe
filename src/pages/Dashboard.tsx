@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import Highcharts from "highcharts";
 import HighchartsStock from "highcharts/highstock";
 import HighchartsReact from "highcharts-react-official";
@@ -18,7 +18,7 @@ import ChartFullscreenModal from "../components/ChartFullscreenModal";
 import type { UserAccount } from "../types/finance";
 import { exportFinanceToExcel } from "../utils/excel";
 import { formatCurrency } from "../utils/money";
-import { calculateBalanceStats } from "../utils/balance";
+import { calculateBalanceStats, getAuthoritativeBalance } from "../utils/balance";
 
 const HighchartsChart =
   (HighchartsReact as unknown as {
@@ -108,6 +108,7 @@ interface Props {
 }
 
 const Dashboard = ({ user, onAdd }: Props) => {
+  const [refreshKey, setRefreshKey] = useState(0);
   const [fullscreenChart, setFullscreenChart] = useState<
     | {
         title: string;
@@ -121,10 +122,21 @@ const Dashboard = ({ user, onAdd }: Props) => {
     | null
   >(null);
 
+  // Force re-render when transactions change
+  useEffect(() => {
+    setRefreshKey(prev => prev + 1);
+  }, [user.transactions.length, user.currentBalance, user.startingBalance, user.transactions.map(t => `${t.id}-${t.amount}-${t.type}`).join(',')]);
+
   const formatMoney = (value: number) => formatCurrency(value, user.currency);
 
   const stats = useMemo(() => {
-    const balanceStats = calculateBalanceStats(user);
+    // Use authoritative balance (respects Settings manual override)
+    const actualCurrentBalance = getAuthoritativeBalance(user);
+    
+    const balanceStats = {
+      ...calculateBalanceStats(user),
+      currentBalance: actualCurrentBalance, // Override with authoritative balance
+    };
     
     const profitCount = user.transactions.filter((t) => t.type === "profit").length;
     const lossCount = user.transactions.filter((t) => t.type === "loss").length;
@@ -133,14 +145,19 @@ const Dashboard = ({ user, onAdd }: Props) => {
     const avgProfitPerTrade = profitCount > 0 ? balanceStats.totalProfit / profitCount : 0;
     const avgLossPerTrade = lossCount > 0 ? balanceStats.totalLoss / lossCount : 0;
 
+    // Recalculate net performance with actual balance
+    const netPerformance = actualCurrentBalance - user.startingBalance;
+
     // Calculate percentage based on starting balance (ROI)
     const performancePercentage =
       balanceStats.startingBalance > 0
-        ? (balanceStats.netPerformance / balanceStats.startingBalance) * 100
+        ? (netPerformance / balanceStats.startingBalance) * 100
         : 0;
 
     return {
       ...balanceStats,
+      currentBalance: actualCurrentBalance,
+      netPerformance,
       profitCount,
       lossCount,
       totalTrades,
@@ -149,7 +166,7 @@ const Dashboard = ({ user, onAdd }: Props) => {
       avgLossPerTrade,
       performancePercentage,
     };
-  }, [user.transactions, user.startingBalance]);
+  }, [user.transactions, user.startingBalance, user.currentBalance, user.defaultCostAmount, refreshKey]);
 
   const {
     totalProfit,
@@ -220,7 +237,7 @@ const Dashboard = ({ user, onAdd }: Props) => {
     );
 
     return createDailySeries(startDate, endDate, dailyNet, user.startingBalance, currentBalance);
-  }, [user.startingBalance, user.transactions, user.createdAt, currentBalance]);
+  }, [user.startingBalance, user.transactions, user.createdAt, currentBalance, refreshKey]);
 
   const profitLossData = useMemo(() => {
     const dailyTotals: Record<
@@ -335,7 +352,7 @@ const Dashboard = ({ user, onAdd }: Props) => {
     }
 
     return result;
-  }, [user.createdAt, user.transactions]);
+  }, [user.createdAt, user.transactions, refreshKey]);
 
   const candlestickOptions = useMemo<Highcharts.Options>(() => {
     const transactions = [...user.transactions]
@@ -730,7 +747,7 @@ const Dashboard = ({ user, onAdd }: Props) => {
         },
       ],
     };
-  }, [formatMoney, user.createdAt, user.startingBalance, user.transactions]);
+  }, [formatMoney, user.createdAt, user.startingBalance, user.transactions, refreshKey]);
 
   const categoryData = useMemo(() => {
     const categories: Record<string, number> = {};
@@ -746,7 +763,7 @@ const Dashboard = ({ user, onAdd }: Props) => {
       .map(([name, amount]) => ({ name, amount }))
       .sort((left, right) => right.amount - left.amount)
       .slice(0, 6);
-  }, [user.transactions]);
+  }, [user.transactions, refreshKey]);
 
   const wealthOptions: Highcharts.Options = {
     accessibility: { enabled: true },
@@ -758,6 +775,87 @@ const Dashboard = ({ user, onAdd }: Props) => {
       animation: { duration: 1800, easing: "easeOutQuart" } as Highcharts.AnimationOptionsObject,
       spacing: [20, 20, 20, 20],
       borderRadius: 0,
+      // TradingView-style zoom and pan
+      zoomType: 'x',
+      panning: {
+        enabled: true,
+        type: 'x'
+      },
+      panKey: 'shift',
+      resetZoomButton: {
+        theme: {
+          fill: 'rgba(59, 130, 246, 0.8)',
+          stroke: 'rgba(59, 130, 246, 1)',
+          r: 6,
+          style: {
+            color: '#ffffff',
+            fontWeight: '600',
+            fontSize: '11px'
+          },
+          states: {
+            hover: {
+              fill: 'rgba(59, 130, 246, 1)',
+            }
+          }
+        },
+        position: {
+          align: 'right',
+          verticalAlign: 'top',
+          x: -10,
+          y: 10
+        }
+      },
+      // Mouse wheel zoom
+      events: {
+        load: function(this: Highcharts.Chart) {
+          const chart = this;
+          
+          // Add mouse wheel zoom functionality
+          chart.container.addEventListener('wheel', function(e: WheelEvent) {
+            e.preventDefault();
+            
+            const point = chart.pointer.normalize(e);
+            const xAxis = chart.xAxis[0];
+            const yAxis = chart.yAxis[0];
+            
+            // Get current zoom level
+            const xMin = xAxis.min!;
+            const xMax = xAxis.max!;
+            const yMin = yAxis.min!;
+            const yMax = yAxis.max!;
+            
+            // Calculate zoom factor
+            const zoomFactor = e.deltaY > 0 ? 1.1 : 0.9;
+            
+            // Calculate mouse position in chart coordinates
+            const mouseX = xAxis.toValue(point.chartX);
+            const mouseY = yAxis.toValue(point.chartY);
+            
+            // Calculate new boundaries
+            const xRange = xMax - xMin;
+            const yRange = yMax - yMin;
+            const newXRange = xRange * zoomFactor;
+            const newYRange = yRange * zoomFactor;
+            
+            const xFactor = (mouseX - xMin) / xRange;
+            const yFactor = (mouseY - yMin) / yRange;
+            
+            const newXMin = mouseX - newXRange * xFactor;
+            const newXMax = mouseX + newXRange * (1 - xFactor);
+            const newYMin = mouseY - newYRange * yFactor;
+            const newYMax = mouseY + newYRange * (1 - yFactor);
+            
+            // Apply zoom
+            xAxis.setExtremes(newXMin, newXMax, false);
+            yAxis.setExtremes(newYMin, newYMax, true);
+          });
+          
+          // Add double-click reset zoom
+          chart.container.addEventListener('dblclick', function() {
+            chart.zoomOut();
+          });
+        }
+      }
     },
     title: { text: undefined },
     subtitle: { text: undefined },
@@ -885,6 +983,25 @@ const Dashboard = ({ user, onAdd }: Props) => {
     backgroundColor: "transparent",
     animation: { duration: 1600, easing: "cubicOut" },
     title: { text: undefined },
+    // TradingView-style zoom and pan functionality
+    dataZoom: [
+      {
+        type: 'slider',
+        show: false,
+        xAxisIndex: [0],
+        start: 0,
+        end: 100
+      },
+      {
+        type: 'inside',
+        xAxisIndex: [0],
+        start: 0,
+        end: 100,
+        zoomOnMouseWheel: true,
+        moveOnMouseMove: true,
+        moveOnMouseWheel: false
+      }
+    ],
     grid: {
       left: 65,
       right: 20,

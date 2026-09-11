@@ -236,8 +236,9 @@ const Dashboard = ({ user, onAdd }: Props) => {
       )
     );
 
-    return createDailySeries(startDate, endDate, dailyNet, user.startingBalance, currentBalance);
-  }, [user.startingBalance, user.transactions, user.createdAt, currentBalance, refreshKey]);
+    const effectiveStartingBalance = currentBalance - totalProfit + totalLoss;
+    return createDailySeries(startDate, endDate, dailyNet, effectiveStartingBalance, currentBalance);
+  }, [user.startingBalance, user.transactions, user.createdAt, currentBalance, refreshKey, totalProfit, totalLoss]);
 
   const profitLossData = useMemo(() => {
     const dailyTotals: Record<
@@ -543,17 +544,18 @@ const Dashboard = ({ user, onAdd }: Props) => {
     }
 
     const candles: Array<[number, number, number, number, number]> = [];
+    const effectiveStartingBalance = currentBalance - totalProfit + totalLoss;
     let currentDay = formatDateKey(transactions[0].parsedDate);
     let dayStart = new Date(
       transactions[0].parsedDate.getFullYear(),
       transactions[0].parsedDate.getMonth(),
       transactions[0].parsedDate.getDate()
     );
-    let runningBalance = user.startingBalance;
-    let open = user.startingBalance;
-    let high = user.startingBalance;
-    let low = user.startingBalance;
-    let close = user.startingBalance;
+    let runningBalance = effectiveStartingBalance;
+    let open = effectiveStartingBalance;
+    let high = effectiveStartingBalance;
+    let low = effectiveStartingBalance;
+    let close = effectiveStartingBalance;
 
     const commitDay = () => {
       candles.push(
@@ -706,7 +708,7 @@ const Dashboard = ({ user, onAdd }: Props) => {
         padding: 0,
         formatter() {
           const [timestamp, pointOpen, pointHigh, pointLow, pointClose] =
-            latestPoint ?? [Number(this.x), user.startingBalance, user.startingBalance, user.startingBalance, user.startingBalance];
+            latestPoint ?? [Number(this.x), effectiveStartingBalance, effectiveStartingBalance, effectiveStartingBalance, effectiveStartingBalance];
           const isUp = pointClose >= pointOpen;
           const changeColor = isUp ? "#10b981" : "#ef4444";
           const changeSign = isUp ? "+" : "";

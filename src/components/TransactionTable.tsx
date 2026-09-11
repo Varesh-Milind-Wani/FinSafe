@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { Transaction } from "../types/finance";
+import { getAuthoritativeBalance } from "../utils/balance";
 
 interface Props {
   transactions: Transaction[];
@@ -35,8 +36,13 @@ const TransactionTable = ({
       return leftDate - rightDate;
     });
 
-    // Start with user's starting balance, not authoritative balance
-    let runningBalance = user.startingBalance;
+    // Calculate effective starting balance to ensure final balance matches authoritative balance
+    const authoritativeCurrentBalance = getAuthoritativeBalance(user);
+    const totalProfit = transactions.filter(t => t.type === 'profit').reduce((sum, t) => sum + t.amount, 0);
+    const totalLoss = transactions.filter(t => t.type === 'loss').reduce((sum, t) => sum + t.amount, 0);
+    const effectiveStartingBalance = authoritativeCurrentBalance - totalProfit + totalLoss;
+
+    let runningBalance = effectiveStartingBalance;
     return sorted.map((transaction) => ({
       ...transaction,
       balance: (() => {
@@ -49,7 +55,7 @@ const TransactionTable = ({
         return runningBalance;
       })(),
     }));
-  }, [transactions, user.startingBalance]);
+  }, [transactions, user]);
 
   const filteredTransactions = useMemo(() => {
     const value = search.toLowerCase();

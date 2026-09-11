@@ -707,8 +707,12 @@ const Dashboard = ({ user, onAdd }: Props) => {
         shadow: false,
         padding: 0,
         formatter() {
-          const [timestamp, pointOpen, pointHigh, pointLow, pointClose] =
-            latestPoint ?? [Number(this.x), effectiveStartingBalance, effectiveStartingBalance, effectiveStartingBalance, effectiveStartingBalance];
+          const p = (this as any).point || this;
+          const timestamp = Number(this.x);
+          const pointOpen = p.open ?? effectiveStartingBalance;
+          const pointHigh = p.high ?? effectiveStartingBalance;
+          const pointLow = p.low ?? effectiveStartingBalance;
+          const pointClose = p.close ?? effectiveStartingBalance;
           const isUp = pointClose >= pointOpen;
           const changeColor = isUp ? "#10b981" : "#ef4444";
           const changeSign = isUp ? "+" : "";

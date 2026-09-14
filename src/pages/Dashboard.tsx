@@ -592,8 +592,6 @@ const Dashboard = ({ user, onAdd }: Props) => {
 
     commitDay();
 
-    const latestPoint = candles[candles.length - 1];
-
     return {
       accessibility: { enabled: true },
       chart: {
@@ -601,9 +599,16 @@ const Dashboard = ({ user, onAdd }: Props) => {
         height: 420,
         spacingTop: 12,
         style: { fontFamily: "Inter, system-ui, sans-serif" },
-        zoomType: "x",
-        panning: { enabled: true, type: "x" },
-        zooming: { type: "x", key: "shift", mouseWheel: { enabled: true } },
+        // Disable built-in zoom/pan — handled by attachChartInteraction
+        zoomType: undefined,
+        panning: { enabled: false },
+        reflow: true,
+        resetZoomButton: { theme: { display: "none" } },
+        events: {
+          load: function(this: Highcharts.Chart) {
+            attachChartInteraction(this);
+          }
+        }
       },
       credits: { enabled: false },
       title: { text: undefined },
@@ -699,6 +704,19 @@ const Dashboard = ({ user, onAdd }: Props) => {
           style: { color: "#5e6b80", fontSize: "11px", fontFamily: "Inter, sans-serif", fontWeight: "500" },
           formatter() { return formatMoney(Number(this.value)); },
         },
+        // Auto-fit Y axis to actual candle data range
+        startOnTick: false,
+        endOnTick: false,
+        ...(() => {
+          // candles = [timestamp, open, high, low, close] — indices 1-4
+          if (candles.length === 0) return {};
+          const allLows  = candles.map((pt: [number,number,number,number,number]) => pt[3]);
+          const allHighs = candles.map((pt: [number,number,number,number,number]) => pt[2]);
+          const lo = Math.min(...allLows);
+          const hi = Math.max(...allHighs);
+          const pad = Math.max((hi - lo) * 0.15, 200);
+          return { min: lo - pad, max: hi + pad };
+        })(),
       },
       tooltip: {
         useHTML: true,
@@ -771,6 +789,68 @@ const Dashboard = ({ user, onAdd }: Props) => {
       .slice(0, 6);
   }, [user.transactions, refreshKey]);
 
+  // ─── Shared helper: attach left-click pan + wheel zoom to any Highcharts chart ───
+  const attachChartInteraction = (chart: Highcharts.Chart) => {
+    let isDragging = false;
+    let dragStartX = 0, dragStartY = 0;
+    let dxMin = 0, dxMax = 0, dyMin = 0, dyMax = 0;
+
+    // Left-click drag → pan X and Y
+    chart.container.addEventListener('mousedown', (e: MouseEvent) => {
+      if (e.button !== 0) return;
+      isDragging = true;
+      dragStartX = e.clientX;
+      dragStartY = e.clientY;
+      dxMin = typeof chart.xAxis[0].min === 'number' ? chart.xAxis[0].min : 0;
+      dxMax = typeof chart.xAxis[0].max === 'number' ? chart.xAxis[0].max : 1;
+      dyMin = typeof chart.yAxis[0].min === 'number' ? chart.yAxis[0].min : 0;
+      dyMax = typeof chart.yAxis[0].max === 'number' ? chart.yAxis[0].max : 1;
+      chart.container.style.cursor = 'grabbing';
+      e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', (e: MouseEvent) => {
+      if (!isDragging) return;
+      const xShift = -((e.clientX - dragStartX) / chart.plotWidth)  * (dxMax - dxMin);
+      const yShift =  ((e.clientY - dragStartY) / chart.plotHeight) * (dyMax - dyMin);
+      chart.xAxis[0].setExtremes(dxMin + xShift, dxMax + xShift, false);
+      chart.yAxis[0].setExtremes(dyMin + yShift, dyMax + yShift, true);
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (!isDragging) return;
+      isDragging = false;
+      chart.container.style.cursor = 'crosshair';
+    });
+
+    // Mouse wheel → zoom (only fires when cursor is inside chart)
+    chart.container.addEventListener('wheel', (e: WheelEvent) => {
+      if (!chart.container.contains(e.target as Node)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const xAxis = chart.xAxis[0];
+      const yAxis = chart.yAxis[0];
+      const xMin = typeof xAxis.min === 'number' ? xAxis.min : 0;
+      const xMax = typeof xAxis.max === 'number' ? xAxis.max : 1;
+      const yMin = typeof yAxis.min === 'number' ? yAxis.min : 0;
+      const yMax = typeof yAxis.max === 'number' ? yAxis.max : 1;
+      const f = e.deltaY > 0 ? 1.1 : 0.9;
+      const pt = chart.pointer.normalize(e);
+      const mx = xAxis.toValue(pt.chartX);
+      const my = yAxis.toValue(pt.chartY);
+      const xRange = xMax - xMin, yRange = yMax - yMin;
+      const xf = (mx - xMin) / xRange, yf = (my - yMin) / yRange;
+      xAxis.setExtremes(mx - xRange * f * xf, mx + xRange * f * (1 - xf), false);
+      yAxis.setExtremes(my - yRange * f * yf, my + yRange * f * (1 - yf), true);
+    }, { passive: false });
+
+    // Double-click → reset
+    chart.container.addEventListener('dblclick', () => {
+      chart.xAxis[0].setExtremes(undefined, undefined, false);
+      chart.yAxis[0].setExtremes(undefined, undefined, true);
+    });
+  };
+
   const wealthOptions: Highcharts.Options = {
     accessibility: { enabled: true },
     chart: {
@@ -781,85 +861,13 @@ const Dashboard = ({ user, onAdd }: Props) => {
       animation: { duration: 1800, easing: "easeOutQuart" } as Highcharts.AnimationOptionsObject,
       spacing: [20, 20, 20, 20],
       borderRadius: 0,
-      // TradingView-style zoom and pan
-      zoomType: 'x',
-      panning: {
-        enabled: true,
-        type: 'x'
-      },
-      panKey: 'shift',
-      resetZoomButton: {
-        theme: {
-          fill: 'rgba(59, 130, 246, 0.8)',
-          stroke: 'rgba(59, 130, 246, 1)',
-          r: 6,
-          style: {
-            color: '#ffffff',
-            fontWeight: '600',
-            fontSize: '11px'
-          },
-          states: {
-            hover: {
-              fill: 'rgba(59, 130, 246, 1)',
-            }
-          }
-        },
-        position: {
-          align: 'right',
-          verticalAlign: 'top',
-          x: -10,
-          y: 10
-        }
-      },
-      // Mouse wheel zoom
+      zoomType: undefined,
+      panning: { enabled: false },
+      reflow: true,
+      resetZoomButton: { theme: { display: "none" } },
       events: {
         load: function(this: Highcharts.Chart) {
-          const chart = this;
-          
-          // Add mouse wheel zoom functionality
-          chart.container.addEventListener('wheel', function(e: WheelEvent) {
-            e.preventDefault();
-            
-            const point = chart.pointer.normalize(e);
-            const xAxis = chart.xAxis[0];
-            const yAxis = chart.yAxis[0];
-            
-            // Get current zoom level
-            const xMin = xAxis.min!;
-            const xMax = xAxis.max!;
-            const yMin = yAxis.min!;
-            const yMax = yAxis.max!;
-            
-            // Calculate zoom factor
-            const zoomFactor = e.deltaY > 0 ? 1.1 : 0.9;
-            
-            // Calculate mouse position in chart coordinates
-            const mouseX = xAxis.toValue(point.chartX);
-            const mouseY = yAxis.toValue(point.chartY);
-            
-            // Calculate new boundaries
-            const xRange = xMax - xMin;
-            const yRange = yMax - yMin;
-            const newXRange = xRange * zoomFactor;
-            const newYRange = yRange * zoomFactor;
-            
-            const xFactor = (mouseX - xMin) / xRange;
-            const yFactor = (mouseY - yMin) / yRange;
-            
-            const newXMin = mouseX - newXRange * xFactor;
-            const newXMax = mouseX + newXRange * (1 - xFactor);
-            const newYMin = mouseY - newYRange * yFactor;
-            const newYMax = mouseY + newYRange * (1 - yFactor);
-            
-            // Apply zoom
-            xAxis.setExtremes(newXMin, newXMax, false);
-            yAxis.setExtremes(newYMin, newYMax, true);
-          });
-          
-          // Add double-click reset zoom
-          chart.container.addEventListener('dblclick', function() {
-            chart.zoomOut();
-          });
+          attachChartInteraction(this);
         }
       }
     },
@@ -904,8 +912,18 @@ const Dashboard = ({ user, onAdd }: Props) => {
         formatter() { return formatMoney(Number(this.value)); },
       },
       opposite: false,
-      min: Math.min(...(wealthData as Array<[number, number]>).map(d => d[1]), currentBalance),
-      max: Math.max(...(wealthData as Array<[number, number]>).map(d => d[1]), currentBalance),
+      // Auto-scale Y axis based on actual data with padding
+      startOnTick: false,
+      endOnTick: false,
+      tickPixelInterval: 60,
+      ...(() => {
+        const vals = (wealthData as Array<[number, number]>).map(d => d[1]);
+        if (vals.length === 0) return {};
+        const dataMin = Math.min(...vals);
+        const dataMax = Math.max(...vals);
+        const padding = (dataMax - dataMin) * 0.15 || 500;
+        return { min: dataMin - padding, max: dataMax + padding };
+      })(),
     },
     tooltip: {
       useHTML: true,
@@ -989,25 +1007,30 @@ const Dashboard = ({ user, onAdd }: Props) => {
     backgroundColor: "transparent",
     animation: { duration: 1600, easing: "cubicOut" },
     title: { text: undefined },
-    // TradingView-style zoom and pan functionality
+    // TradingView-style zoom and pan functionality with better resize handling
     dataZoom: [
       {
         type: 'slider',
         show: false,
         xAxisIndex: [0],
         start: 0,
-        end: 100
+        end: 100,
+        // Prevent zoom reset on resize
+        filterMode: 'none'
       },
       {
         type: 'inside',
         xAxisIndex: [0],
         start: 0,
         end: 100,
-        zoomOnMouseWheel: true,
-        moveOnMouseMove: true,
+        zoomOnMouseWheel: false,  // Disable - prevents zoom outside chart
+        moveOnMouseMove: false,
         moveOnMouseWheel: false
       }
     ],
+    // Better responsive behavior
+    responsive: true,
+    maintainAspectRatio: false,
     grid: {
       left: 65,
       right: 20,

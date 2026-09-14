@@ -64,23 +64,70 @@ const ChartFullscreenModal = ({
       return undefined;
     }
 
+    // Shared pan + zoom handler for fullscreen charts
+    const attachInteraction = (chart: Highcharts.Chart) => {
+      let isDragging = false;
+      let dragStartX = 0, dragStartY = 0;
+      let dxMin = 0, dxMax = 0, dyMin = 0, dyMax = 0;
+
+      chart.container.addEventListener('mousedown', (e: MouseEvent) => {
+        if (e.button !== 0) return;
+        isDragging = true;
+        dragStartX = e.clientX; dragStartY = e.clientY;
+        dxMin = typeof chart.xAxis[0].min === 'number' ? chart.xAxis[0].min : 0;
+        dxMax = typeof chart.xAxis[0].max === 'number' ? chart.xAxis[0].max : 1;
+        dyMin = typeof chart.yAxis[0].min === 'number' ? chart.yAxis[0].min : 0;
+        dyMax = typeof chart.yAxis[0].max === 'number' ? chart.yAxis[0].max : 1;
+        chart.container.style.cursor = 'grabbing';
+        e.preventDefault();
+      });
+      document.addEventListener('mousemove', (e: MouseEvent) => {
+        if (!isDragging) return;
+        const xShift = -((e.clientX - dragStartX) / chart.plotWidth)  * (dxMax - dxMin);
+        const yShift =  ((e.clientY - dragStartY) / chart.plotHeight) * (dyMax - dyMin);
+        chart.xAxis[0].setExtremes(dxMin + xShift, dxMax + xShift, false);
+        chart.yAxis[0].setExtremes(dyMin + yShift, dyMax + yShift, true);
+      });
+      document.addEventListener('mouseup', () => {
+        if (!isDragging) return;
+        isDragging = false;
+        chart.container.style.cursor = 'crosshair';
+      });
+      chart.container.addEventListener('wheel', (e: WheelEvent) => {
+        if (!chart.container.contains(e.target as Node)) return;
+        e.preventDefault(); e.stopPropagation();
+        const xAxis = chart.xAxis[0], yAxis = chart.yAxis[0];
+        const xMin = typeof xAxis.min === 'number' ? xAxis.min : 0;
+        const xMax = typeof xAxis.max === 'number' ? xAxis.max : 1;
+        const yMin = typeof yAxis.min === 'number' ? yAxis.min : 0;
+        const yMax = typeof yAxis.max === 'number' ? yAxis.max : 1;
+        const f = e.deltaY > 0 ? 1.1 : 0.9;
+        const pt = chart.pointer.normalize(e);
+        const mx = xAxis.toValue(pt.chartX), my = yAxis.toValue(pt.chartY);
+        const xRange = xMax - xMin, yRange = yMax - yMin;
+        const xf = (mx - xMin) / xRange, yf = (my - yMin) / yRange;
+        xAxis.setExtremes(mx - xRange * f * xf, mx + xRange * f * (1 - xf), false);
+        yAxis.setExtremes(my - yRange * f * yf, my + yRange * f * (1 - yf), true);
+      }, { passive: false });
+      chart.container.addEventListener('dblclick', () => {
+        chart.xAxis[0].setExtremes(undefined, undefined, false);
+        chart.yAxis[0].setExtremes(undefined, undefined, true);
+      });
+    };
+
     return {
       ...selectedOptions,
       chart: {
         ...selectedOptions.chart,
         height: chartHeight,
-        panning: {
-          ...selectedOptions.chart?.panning,
-          enabled: true,
-          type: "x",
-        },
-        zooming: {
-          ...selectedOptions.chart?.zooming,
-          type: "x",
-          key: "shift",
-          mouseWheel: {
-            enabled: true,
-          },
+        zoomType: undefined,
+        panning: { enabled: false },
+        resetZoomButton: { theme: { display: "none" } },
+        events: {
+          ...selectedOptions.chart?.events,
+          load: function(this: Highcharts.Chart) {
+            attachInteraction(this);
+          }
         },
       },
     };

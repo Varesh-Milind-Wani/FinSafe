@@ -3070,10 +3070,11 @@ select.filter-dropdown:focus,
 
 /* ===== TRADINGVIEW-STYLE CHART ZOOM EFFECTS ===== */
 
-/* Chart container hover effects */
+/* Chart container hover effects with resize stability */
 .chart-container {
   position: relative;
   transition: all 0.3s ease;
+  overflow: hidden; /* Prevent layout shifts during resize */
 }
 
 .chart-container:hover {
@@ -3083,15 +3084,40 @@ select.filter-dropdown:focus,
     0 3px 10px rgba(59, 130, 246, 0.1);
 }
 
-/* Chart crosshair cursor on zoom-enabled charts */
-.chart-container canvas,
-.chart-container svg {
-  cursor: crosshair;
+/* Ensure chart doesn't zoom out excessively on resize */
+.highcharts-container,
+.echarts-for-react {
+  transition: none !important; /* Prevent smooth transitions during resize */
 }
 
+/* Maintain chart aspect ratio during resize */
+.chart-container svg,
+.chart-container canvas {
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+/* Fix Highcharts resize behavior */
+.highcharts-container svg {
+  overflow: visible !important;
+}
+
+/* Prevent zoom reset on window resize */
+.highcharts-container .highcharts-series-group {
+  transition: transform 0.1s ease !important;
+}
+
+/* Chart crosshair cursor on zoom-enabled charts */
+.chart-container canvas,
+.chart-container svg,
+.highcharts-container {
+  cursor: crosshair !important;
+}
+
+.highcharts-container.dragging,
 .chart-container.panning canvas,
 .chart-container.panning svg {
-  cursor: grabbing;
+  cursor: grabbing !important;
 }
 
 /* Chart loading animation for zoom transitions */
@@ -3140,6 +3166,17 @@ select.filter-dropdown:focus,
 
 .chart-container:hover .chart-interaction-hint {
   opacity: 1;
+}
+
+/* Fix fullscreen chart modal resize issues */
+.chart-fullscreen-modal .chart-container {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.chart-fullscreen-modal .highcharts-container {
+  width: 100% !important;
+  height: 100% !important;
 }
 
 @media (max-width: 768px) {

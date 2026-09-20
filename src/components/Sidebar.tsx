@@ -8,14 +8,15 @@ import {
   TrendingDown,
   TrendingUp,
   MessageCircle,
+  PiggyBank,
 } from "lucide-react";
 import type { UserAccount } from "../types/finance";
 
 interface SidebarProps {
   user: UserAccount;
-  activePage: "dashboard" | "transactions" | "analytics" | "profitloss" | "withdrawals" | "settings" | "chat";
+  activePage: "dashboard" | "transactions" | "analytics" | "profitloss" | "withdrawals" | "settings" | "chat" | "investment";
   onPageChange: (
-    page: "dashboard" | "transactions" | "analytics" | "profitloss" | "withdrawals" | "settings" | "chat"
+    page: "dashboard" | "transactions" | "analytics" | "profitloss" | "withdrawals" | "settings" | "chat" | "investment"
   ) => void;
   onLogout: () => void;
   mobileOpen: boolean;
@@ -105,6 +106,18 @@ const Sidebar = ({
         >
           <TrendingDown size={18} />
           Withdrawals
+        </button>
+
+        <button
+          className={
+            activePage === "investment"
+              ? "nav-button active"
+              : "nav-button"
+          }
+          onClick={() => onPageChange("investment")}
+        >
+          <PiggyBank size={18} />
+          Investment
         </button>
 
         <button

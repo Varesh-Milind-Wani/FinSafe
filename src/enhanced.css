@@ -3179,6 +3179,106 @@ select.filter-dropdown:focus,
   height: 100% !important;
 }
 
+/* Expanded charts are a true full-page workspace on every screen size. */
+.chart-fullscreen-overlay {
+  padding: 0;
+}
+
+.chart-fullscreen-modal {
+  width: 100vw;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  border: 0;
+  border-radius: 0;
+}
+
+.chart-fullscreen-body {
+  padding: 24px;
+}
+
+/* P&L calendar: make the daily performance sheet easier to scan. */
+.calendar-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 12px;
+  border: 1px solid rgba(59, 130, 246, 0.14);
+  border-radius: 9px;
+  background: rgba(15, 23, 42, 0.5);
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.calendar-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.calendar-legend i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.calendar-legend .profit-dot { background: #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.55); }
+.calendar-legend .loss-dot { background: #ef4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.5); }
+.calendar-legend .neutral-dot { background: #64748b; }
+
+.calendar-dashboard-grid {
+  gap: 28px;
+}
+
+.calendar-card-header {
+  padding: 18px 24px;
+}
+
+.calendar-card-content {
+  padding: 22px 24px 24px;
+}
+
+.calendar-day-headers,
+.calendar-days-grid {
+  gap: 5px;
+}
+
+.calendar-day-header {
+  padding: 9px 4px;
+  letter-spacing: 0.05em;
+}
+
+.calendar-day-cell {
+  min-height: 60px;
+  border-radius: 9px;
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.calendar-day-cell:hover:not(.invisible) {
+  transform: translateY(-2px) scale(1.025);
+  z-index: 1;
+}
+
+.calendar-day-cell .day-number {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.calendar-day-cell .day-amount {
+  margin-top: 4px;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 768px) {
+  .calendar-legend {
+    width: 100%;
+    justify-content: space-around;
+  }
+}
+
 @media (max-width: 768px) {
   .search-filters-row,
   .table-controls {

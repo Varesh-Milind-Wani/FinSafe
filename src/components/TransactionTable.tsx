@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { Transaction } from "../types/finance";
-import { getAuthoritativeBalance } from "../utils/balance";
+import { calculateCurrentBalance } from "../utils/balance";
 
 interface Props {
   transactions: Transaction[];
@@ -28,7 +28,8 @@ const TransactionTable = ({
     useState<"newest" | "oldest">("newest");
   const [typeFilter, setTypeFilter] = useState<"all" | "profit" | "loss">("all");
 
-  // Calculate running balance for each transaction using authoritative starting point
+  // Calculate running trading balance from transactions only. Investments are
+  // portfolio assets, not individual trade entries, so they must not shift rows.
   const transactionsWithBalance = useMemo(() => {
     const sorted = [...transactions].sort((left, right) => {
       const leftDate = new Date(left.date).getTime();
@@ -36,11 +37,11 @@ const TransactionTable = ({
       return leftDate - rightDate;
     });
 
-    // Calculate effective starting balance to ensure final balance matches authoritative balance
-    const authoritativeCurrentBalance = getAuthoritativeBalance(user);
+    // Derive the trading-only baseline from the same balance used on save.
+    const tradingBalance = calculateCurrentBalance(user);
     const totalProfit = transactions.filter(t => t.type === 'profit').reduce((sum, t) => sum + t.amount, 0);
     const totalLoss = transactions.filter(t => t.type === 'loss').reduce((sum, t) => sum + t.amount, 0);
-    const effectiveStartingBalance = authoritativeCurrentBalance - totalProfit + totalLoss;
+    const effectiveStartingBalance = tradingBalance - totalProfit + totalLoss;
 
     let runningBalance = effectiveStartingBalance;
     return sorted.map((transaction) => ({

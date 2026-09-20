@@ -5,7 +5,7 @@ import {
   Calendar,
   DollarSign,
 } from "lucide-react";
-import type { UserAccount } from "../types/finance";
+import type { Transaction, UserAccount } from "../types/finance";
 import { formatCurrency } from "../utils/money";
 import { calculateBalanceStats } from "../utils/balance";
 
@@ -40,7 +40,7 @@ const parseLocalDate = (value: string) => {
   return null;
 };
 
-const generateCalendarDays = (month: Date, transactions: any[]) => {
+const generateCalendarDays = (month: Date, transactions: Transaction[]) => {
   const year = month.getFullYear();
   const monthIndex = month.getMonth();
   const firstDay = new Date(year, monthIndex, 1);
@@ -54,7 +54,7 @@ const generateCalendarDays = (month: Date, transactions: any[]) => {
   const current = new Date(startDate);
   
   // Group transactions by date - use local date formatting
-  const transactionsByDate: Record<string, { profit: number; loss: number; transactions: any[] }> = {};
+  const transactionsByDate: Record<string, { profit: number; loss: number; transactions: Transaction[] }> = {};
   
   transactions.forEach(transaction => {
     const date = parseLocalDate(transaction.date);
@@ -69,7 +69,7 @@ const generateCalendarDays = (month: Date, transactions: any[]) => {
         transactionsByDate[dateKey] = { profit: 0, loss: 0, transactions: [] };
       }
       
-      const amount = transaction.grossAmount || transaction.amount;
+      const amount = transaction.amount;
       if (transaction.type === 'profit') {
         transactionsByDate[dateKey].profit += amount;
       } else {
@@ -144,18 +144,39 @@ const ProfitLoss = ({ user }: Props) => {
   const [selectedPeriod, setSelectedPeriod] = useState("all");
   const [calendarMonths, setCalendarMonths] = useState(1);
 
+  const filteredTransactions = useMemo(() => {
+    const monthsByPeriod: Record<string, number> = {
+      "1m": 1,
+      "3m": 3,
+      "6m": 6,
+      "1y": 12,
+    };
+    const months = monthsByPeriod[selectedPeriod];
+
+    if (!months) return user.transactions;
+
+    const cutoff = new Date();
+    cutoff.setHours(0, 0, 0, 0);
+    cutoff.setMonth(cutoff.getMonth() - months);
+
+    return user.transactions.filter((transaction) => {
+      const date = parseLocalDate(transaction.date);
+      return Boolean(date && date >= cutoff);
+    });
+  }, [selectedPeriod, user.transactions]);
+
   const stats = useMemo(() => {
-    const balanceStats = calculateBalanceStats(user);
+    const balanceStats = calculateBalanceStats({ ...user, transactions: filteredTransactions });
     
-    const profitCount = user.transactions.filter((t) => t.type === "profit").length;
-    const lossCount = user.transactions.filter((t) => t.type === "loss").length;
+    const profitCount = filteredTransactions.filter((t) => t.type === "profit").length;
+    const lossCount = filteredTransactions.filter((t) => t.type === "loss").length;
     const totalTrades = profitCount + lossCount;
     const winRate = totalTrades > 0 ? (profitCount / totalTrades) * 100 : 0;
     const avgProfitPerTrade = profitCount > 0 ? balanceStats.totalProfit / profitCount : 0;
     const avgLossPerTrade = lossCount > 0 ? balanceStats.totalLoss / lossCount : 0;
 
     // Calculate total costs from all transactions
-    const totalCosts = user.transactions.reduce((sum, transaction) => {
+    const totalCosts = filteredTransactions.reduce((sum, transaction) => {
       return sum + (transaction.costAmount || 0);
     }, 0);
 
@@ -169,7 +190,7 @@ const ProfitLoss = ({ user }: Props) => {
       avgLossPerTrade,
       totalCosts,
     };
-  }, [user.transactions, user.startingBalance]);
+  }, [filteredTransactions, user]);
 
   return (
     <div className="page-content">
@@ -237,9 +258,14 @@ const ProfitLoss = ({ user }: Props) => {
           <div>
             <span className="eyebrow">TRADING CALENDAR</span>
             <h2>Daily Performance Overview</h2>
-            <p>Track your daily trading performance at a glance</p>
+            <p>{filteredTransactions.length} transactions in the selected period</p>
           </div>
           <div className="dashboard-actions">
+            <div className="calendar-legend" aria-label="Calendar legend">
+              <span><i className="profit-dot" /> Profit</span>
+              <span><i className="loss-dot" /> Loss</span>
+              <span><i className="neutral-dot" /> No activity</span>
+            </div>
             <select 
               value={calendarMonths} 
               onChange={(e) => setCalendarMonths(Number(e.target.value))}
@@ -275,12 +301,13 @@ const ProfitLoss = ({ user }: Props) => {
                   </div>
                   
                   <div className="calendar-days-grid">
-                    {generateCalendarDays(currentMonth, user.transactions).map((day, index) => (
+                    {generateCalendarDays(currentMonth, filteredTransactions).map((day, index) => (
                       day.isVisible ? (
                         <div 
                           key={index} 
                           className={`calendar-day-cell ${day.type} ${day.isEmpty ? 'empty' : ''} ${day.isToday ? 'today' : ''}`}
                           title={day.tooltip}
+                          aria-label={day.tooltip}
                         >
                           <span className="day-number">{day.day}</span>
                           {day.amount && <span className="day-amount">₹{Math.floor(day.amount)}</span>}

@@ -43,7 +43,7 @@ const ChartFullscreenModal = ({
 }: Props) => {
   const chartHeight = Math.max(
     420,
-    Math.round(window.innerHeight * 0.68)
+    Math.round(window.innerHeight - 150)
   );
   const [chartMode, setChartMode] =
     useState<ChartMode>(defaultChartMode);
@@ -64,7 +64,7 @@ const ChartFullscreenModal = ({
       return undefined;
     }
 
-    // Shared pan + zoom handler for fullscreen charts
+    // Shared drag-pan handler for fullscreen charts; wheel scrolling stays available.
     const attachInteraction = (chart: Highcharts.Chart) => {
       let isDragging = false;
       let dragStartX = 0, dragStartY = 0;
@@ -72,6 +72,18 @@ const ChartFullscreenModal = ({
 
       chart.container.addEventListener('mousedown', (e: MouseEvent) => {
         if (e.button !== 0) return;
+        const target = e.target instanceof Element ? e.target : null;
+        if (
+          target?.closest(
+            ".highcharts-button, .highcharts-range-selector-group, .highcharts-navigator, .highcharts-scrollbar"
+          )
+        ) {
+          return;
+        }
+        const point = chart.pointer.normalize(e);
+        if (!chart.isInsidePlot(point.chartX - chart.plotLeft, point.chartY - chart.plotTop)) {
+          return;
+        }
         isDragging = true;
         dragStartX = e.clientX; dragStartY = e.clientY;
         dxMin = typeof chart.xAxis[0].min === 'number' ? chart.xAxis[0].min : 0;
@@ -93,26 +105,64 @@ const ChartFullscreenModal = ({
         isDragging = false;
         chart.container.style.cursor = 'crosshair';
       });
-      chart.container.addEventListener('wheel', (e: WheelEvent) => {
-        if (!chart.container.contains(e.target as Node)) return;
-        e.preventDefault(); e.stopPropagation();
-        const xAxis = chart.xAxis[0], yAxis = chart.yAxis[0];
-        const xMin = typeof xAxis.min === 'number' ? xAxis.min : 0;
-        const xMax = typeof xAxis.max === 'number' ? xAxis.max : 1;
-        const yMin = typeof yAxis.min === 'number' ? yAxis.min : 0;
-        const yMax = typeof yAxis.max === 'number' ? yAxis.max : 1;
-        const f = e.deltaY > 0 ? 1.1 : 0.9;
-        const pt = chart.pointer.normalize(e);
-        const mx = xAxis.toValue(pt.chartX), my = yAxis.toValue(pt.chartY);
-        const xRange = xMax - xMin, yRange = yMax - yMin;
-        const xf = (mx - xMin) / xRange, yf = (my - yMin) / yRange;
-        xAxis.setExtremes(mx - xRange * f * xf, mx + xRange * f * (1 - xf), false);
-        yAxis.setExtremes(my - yRange * f * yf, my + yRange * f * (1 - yf), true);
-      }, { passive: false });
       chart.container.addEventListener('dblclick', () => {
         chart.xAxis[0].setExtremes(undefined, undefined, false);
         chart.yAxis[0].setExtremes(undefined, undefined, true);
       });
+    };
+
+    // The standard Highcharts renderer used for Classic charts does not
+    // provide Stock's built-in crosshair label, so render an equivalent badge.
+    const attachClassicValueLabel = (chart: Highcharts.Chart) => {
+      const axis = chart.yAxis[0];
+      let label: Highcharts.SVGElement | undefined;
+
+      const hideLabel = () => label?.hide();
+      const updateLabel = (event: MouseEvent) => {
+        const point = chart.pointer.normalize(event);
+        const withinPlot = chart.isInsidePlot(
+          point.chartX - chart.plotLeft,
+          point.chartY - chart.plotTop
+        );
+
+        if (!withinPlot) {
+          hideLabel();
+          return;
+        }
+
+        const value = axis.toValue(point.chartY);
+        const text = `₹${Math.round(value).toLocaleString("en-IN")}`;
+
+        if (!label) {
+          label = chart.renderer
+            .label(text, 0, 0, "callout")
+            .attr({
+              fill: "#2563eb",
+              stroke: "#60a5fa",
+              "stroke-width": 1,
+              padding: 6,
+              r: 4,
+              zIndex: 8,
+            })
+            .css({ color: "#ffffff", fontSize: "11px", fontWeight: "700" })
+            .add();
+        }
+
+        label.attr({ text }).show();
+        const box = label.getBBox();
+        const x = Math.min(
+          chart.plotLeft + chart.plotWidth + 10,
+          chart.chartWidth - box.width - 10
+        );
+        const y = Math.max(
+          chart.plotTop,
+          Math.min(point.chartY - box.height / 2, chart.plotTop + chart.plotHeight - box.height)
+        );
+        label.attr({ x, y });
+      };
+
+      chart.container.addEventListener("mousemove", updateLabel);
+      chart.container.addEventListener("mouseleave", hideLabel);
     };
 
     return {
@@ -122,11 +172,15 @@ const ChartFullscreenModal = ({
         height: chartHeight,
         zoomType: undefined,
         panning: { enabled: false },
+        zooming: { mouseWheel: { enabled: false } },
         resetZoomButton: { theme: { display: "none" } },
         events: {
           ...selectedOptions.chart?.events,
           load: function(this: Highcharts.Chart) {
             attachInteraction(this);
+            if (chartMode === "classic") {
+              attachClassicValueLabel(this);
+            }
           }
         },
       },
@@ -152,9 +206,9 @@ const ChartFullscreenModal = ({
         {
           type: "inside",
           xAxisIndex: 0,
-          zoomOnMouseWheel: true,
-          moveOnMouseMove: true,
-          moveOnMouseWheel: true,
+          zoomOnMouseWheel: false,
+          moveOnMouseMove: false,
+          moveOnMouseWheel: false,
         },
       ],
     };

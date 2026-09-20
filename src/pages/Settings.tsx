@@ -16,7 +16,7 @@ import {
 
 import type { DefaultCostSchedule, UserAccount } from "../types/finance";
 import { formatCurrency } from "../utils/money";
-import { getAuthoritativeBalance } from "../utils/balance";
+import { calculateCurrentBalance, getAuthoritativeBalance } from "../utils/balance";
 import { addSampleTradesToUser } from "../utils/storage";
 
 const getCostForDate = (
@@ -75,6 +75,9 @@ const Settings = ({ user, onSave }: Props) => {
   const [currency, setCurrency] = useState(
     user.currency ?? "INR"
   );
+  const [investmentIncluded, setInvestmentIncluded] = useState(
+    user.investmentIncluded ?? false
+  );
   const [status, setStatus] = useState<string | null>(null);
   const [schedules, setSchedules] = useState<DefaultCostSchedule[]>(
     user.defaultCostSchedules ?? []
@@ -92,6 +95,7 @@ const Settings = ({ user, onSave }: Props) => {
     setIsStartingBalanceLocked(user.startingBalanceLocked ?? false);
     setCurrentBalanceInput(String(user.currentBalance ?? currentBalance));
     setCurrency(user.currency ?? "INR");
+    setInvestmentIncluded(user.investmentIncluded ?? false);
     setSchedules(user.defaultCostSchedules ?? []);
   }, [
     user.currency,
@@ -128,21 +132,32 @@ const Settings = ({ user, onSave }: Props) => {
       return;
     }
 
+    const recalculatedTransactions = recalculateTransactions(
+      user.transactions,
+      schedules,
+      user.defaultCostAmount ?? 0
+    );
+    const balanceBeforeManualAdjustment = calculateCurrentBalance({
+      ...user,
+      startingBalance: nextBalance,
+      transactions: recalculatedTransactions,
+      balanceAdjustment: 0,
+    });
     const updatedUser = {
       ...user,
       name: name.trim(),
       email: email.trim(),
       startingBalance: nextBalance,
       startingBalanceLocked: isStartingBalanceLocked,
-      currentBalance: nextCurrentBalance, // Allow manual balance override for rebalancing
+      currentBalance: nextCurrentBalance,
+      // Keep the manual rebalance as an offset so future transaction changes
+      // preserve it instead of resetting the balance back to the raw total.
+      balanceAdjustment: nextCurrentBalance - balanceBeforeManualAdjustment,
       currency,
+      investmentIncluded,
       defaultCostAmount: user.defaultCostAmount ?? 0,
       defaultCostSchedules: schedules,
-      transactions: recalculateTransactions(
-        user.transactions,
-        schedules,
-        user.defaultCostAmount ?? 0
-      ),
+      transactions: recalculatedTransactions,
     };
 
     onSave(updatedUser);
@@ -435,6 +450,56 @@ const Settings = ({ user, onSave }: Props) => {
             <div className="snapshot-item">
               <span>Transactions saved</span>
               <strong>{user.transactions.length}</strong>
+            </div>
+
+            {/* Investment Included Toggle */}
+            <div className="snapshot-item" style={{ alignItems: "center" }}>
+              <div style={{ flex: 1 }}>
+                <span style={{ display: "block", fontWeight: 600, color: "#e2e8f0", marginBottom: 2 }}>
+                  Amount Investment Included
+                </span>
+                <span style={{ fontSize: 12, color: "#64748b" }}>
+                  {investmentIncluded
+                    ? "Current balance = Trading balance + Investment total"
+                    : "Current balance = Trading balance only"}
+                </span>
+              </div>
+              {/* Toggle switch */}
+              <button
+                type="button"
+                onClick={() => setInvestmentIncluded(v => !v)}
+                style={{
+                  position: "relative",
+                  width: 48,
+                  height: 26,
+                  borderRadius: 13,
+                  border: "none",
+                  background: investmentIncluded
+                    ? "linear-gradient(135deg, #3b82f6, #2563eb)"
+                    : "rgba(51,65,85,0.8)",
+                  cursor: "pointer",
+                  transition: "background 0.3s ease",
+                  flexShrink: 0,
+                  boxShadow: investmentIncluded
+                    ? "0 0 12px rgba(59,130,246,0.5)"
+                    : "none",
+                }}
+                aria-checked={investmentIncluded}
+                role="switch"
+                title="Toggle investment in balance"
+              >
+                <span style={{
+                  position: "absolute",
+                  top: 3,
+                  left: investmentIncluded ? 25 : 3,
+                  width: 20,
+                  height: 20,
+                  borderRadius: "50%",
+                  background: "#ffffff",
+                  transition: "left 0.3s ease",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.3)",
+                }} />
+              </button>
             </div>
           </div>
 

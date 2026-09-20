@@ -48,13 +48,21 @@ const normalizeUser = (user: UserAccount): UserAccount => ({
         })
       : [];
 
-    return { defaultCostSchedules: schedules, transactions };
+    const expenses = Array.isArray(user.expenses)
+      ? user.expenses.filter(
+          (expense) => Boolean(expense) && typeof expense.id === "string" && Number.isFinite(expense.amount)
+        )
+      : [];
+    return { defaultCostSchedules: schedules, transactions, expenses };
   })(),
   name: user.name ?? "",
   email: user.email ?? "",
   password: user.password ?? "",
   startingBalance: Number.isFinite(user.startingBalance)
     ? user.startingBalance
+    : 0,
+  balanceAdjustment: Number.isFinite(user.balanceAdjustment)
+    ? user.balanceAdjustment
     : 0,
   currency: user.currency ?? "INR",
   defaultCostAmount: Number.isFinite(user.defaultCostAmount)

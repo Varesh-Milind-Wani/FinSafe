@@ -125,7 +125,7 @@ const Dashboard = ({ user, onAdd }: Props) => {
   // Force re-render when transactions change
   useEffect(() => {
     setRefreshKey(prev => prev + 1);
-  }, [user.transactions.length, user.currentBalance, user.startingBalance, user.transactions.map(t => `${t.id}-${t.amount}-${t.type}`).join(',')]);
+  }, [user.transactions.length, user.currentBalance, user.startingBalance, user.investmentIncluded, (user.investments ?? []).map(i => i.currentValue).join(','), user.transactions.map(t => `${t.id}-${t.amount}-${t.type}`).join(',')]); 
 
   const formatMoney = (value: number) => formatCurrency(value, user.currency);
 
@@ -166,7 +166,7 @@ const Dashboard = ({ user, onAdd }: Props) => {
       avgLossPerTrade,
       performancePercentage,
     };
-  }, [user.transactions, user.startingBalance, user.currentBalance, user.defaultCostAmount, refreshKey]);
+  }, [user.transactions, user.startingBalance, user.currentBalance, user.defaultCostAmount, user.investmentIncluded, user.investments, refreshKey]);
 
   const {
     totalProfit,
@@ -402,17 +402,12 @@ const Dashboard = ({ user, onAdd }: Props) => {
         chart: {
           backgroundColor: "transparent",
           height: 420,
-          spacingTop: 12,
-          zoomType: "x",
-          panning: {
-            enabled: true,
-            type: "x",
-          },
+          spacing: [32, 32, 34, 32],
+          zoomType: undefined,
+          panning: { enabled: false },
           zooming: {
-            type: "x",
-            key: "shift",
             mouseWheel: {
-              enabled: true,
+              enabled: false,
             },
           },
         },
@@ -431,6 +426,8 @@ const Dashboard = ({ user, onAdd }: Props) => {
         rangeSelector: {
           selected: 5,
           inputEnabled: false,
+          buttonSpacing: 8,
+          buttonPosition: { align: "left", x: 0, y: 4 },
           verticalAlign: "top",
           buttonTheme: {
             fill: "#151922",
@@ -466,6 +463,8 @@ const Dashboard = ({ user, onAdd }: Props) => {
         },
         navigator: {
           enabled: true,
+          margin: 18,
+          height: 72,
         },
         scrollbar: {
           enabled: false,
@@ -473,6 +472,12 @@ const Dashboard = ({ user, onAdd }: Props) => {
         xAxis: {
           type: "datetime",
           lineColor: "#252b36",
+          crosshair: {
+            width: 1,
+            color: "rgba(96, 165, 250, 0.65)",
+            dashStyle: "Dash",
+            snap: false,
+          },
           labels: {
             style: {
               color: "#7f8799",
@@ -483,6 +488,24 @@ const Dashboard = ({ user, onAdd }: Props) => {
           opposite: true,
           title: {
             text: undefined,
+          },
+          crosshair: {
+            width: 1,
+            color: "rgba(96, 165, 250, 0.65)",
+            dashStyle: "Dash",
+            snap: false,
+            label: {
+              enabled: true,
+              backgroundColor: "#2563eb",
+              borderColor: "#60a5fa",
+              borderRadius: 4,
+              borderWidth: 1,
+              padding: 6,
+              style: { color: "#ffffff", fontSize: "11px", fontWeight: "700" },
+              formatter(value) {
+                return formatMoney(value);
+              },
+            },
           },
           gridLineColor: "#222731",
           labels: {
@@ -495,6 +518,7 @@ const Dashboard = ({ user, onAdd }: Props) => {
           },
         },
         tooltip: {
+          enabled: false,
           useHTML: true,
           backgroundColor: "#171b22",
           borderColor: "#303744",
@@ -597,11 +621,12 @@ const Dashboard = ({ user, onAdd }: Props) => {
       chart: {
         backgroundColor: "transparent",
         height: 420,
-        spacingTop: 12,
+        spacing: [32, 32, 36, 32],
         style: { fontFamily: "Inter, system-ui, sans-serif" },
         // Disable built-in zoom/pan — handled by attachChartInteraction
         zoomType: undefined,
         panning: { enabled: false },
+        zooming: { mouseWheel: { enabled: false } },
         reflow: true,
         resetZoomButton: { theme: { display: "none" } },
         events: {
@@ -617,6 +642,8 @@ const Dashboard = ({ user, onAdd }: Props) => {
       rangeSelector: {
         selected: 5,
         inputEnabled: true,
+        buttonSpacing: 8,
+        buttonPosition: { align: "left", x: 0, y: 4 },
         inputStyle: {
           color: "#e8edf5",
           border: "1px solid #3d4d63",
@@ -656,10 +683,10 @@ const Dashboard = ({ user, onAdd }: Props) => {
       },
       navigator: {
         enabled: true,
-        height: 80,
+        height: 84,
         maskFill: "rgba(59, 130, 246, 0.12)",
         outlineColor: "rgba(59, 130, 246, 0.3)",
-        margin: 8,
+        margin: 20,
         handles: { 
           width: 16, 
           borderRadius: 4, 
@@ -688,6 +715,12 @@ const Dashboard = ({ user, onAdd }: Props) => {
         lineColor: "rgba(59, 130, 246, 0.2)",
         tickColor: "rgba(59, 130, 246, 0.2)",
         gridLineColor: "rgba(59, 130, 246, 0.08)",
+          crosshair: {
+            width: 1,
+            color: "rgba(96, 165, 250, 0.7)",
+            dashStyle: "Dash",
+            snap: false,
+        },
         labels: { 
           style: { color: "#5e6b80", fontSize: "11px", fontFamily: "Inter, sans-serif", fontWeight: "500" },
           formatter() {
@@ -700,6 +733,24 @@ const Dashboard = ({ user, onAdd }: Props) => {
         opposite: true,
         title: { text: undefined },
         gridLineColor: "rgba(59, 130, 246, 0.08)",
+        crosshair: {
+          width: 1,
+          color: "rgba(96, 165, 250, 0.7)",
+          dashStyle: "Dash",
+          snap: false,
+          label: {
+            enabled: true,
+            backgroundColor: "#2563eb",
+            borderColor: "#60a5fa",
+            borderRadius: 4,
+            borderWidth: 1,
+            padding: 6,
+            style: { color: "#ffffff", fontSize: "11px", fontWeight: "700" },
+            formatter(value) {
+              return formatMoney(value);
+            },
+          },
+        },
         labels: {
           style: { color: "#5e6b80", fontSize: "11px", fontFamily: "Inter, sans-serif", fontWeight: "500" },
           formatter() { return formatMoney(Number(this.value)); },
@@ -719,6 +770,7 @@ const Dashboard = ({ user, onAdd }: Props) => {
         })(),
       },
       tooltip: {
+        enabled: false,
         useHTML: true,
         backgroundColor: "transparent",
         borderWidth: 0,
@@ -789,7 +841,7 @@ const Dashboard = ({ user, onAdd }: Props) => {
       .slice(0, 6);
   }, [user.transactions, refreshKey]);
 
-  // ─── Shared helper: attach left-click pan + wheel zoom to any Highcharts chart ───
+  // ─── Shared helper: attach left-click pan to Highcharts charts ───
   const attachChartInteraction = (chart: Highcharts.Chart) => {
     let isDragging = false;
     let dragStartX = 0, dragStartY = 0;
@@ -798,6 +850,18 @@ const Dashboard = ({ user, onAdd }: Props) => {
     // Left-click drag → pan X and Y
     chart.container.addEventListener('mousedown', (e: MouseEvent) => {
       if (e.button !== 0) return;
+      const target = e.target instanceof Element ? e.target : null;
+      if (
+        target?.closest(
+          ".highcharts-button, .highcharts-range-selector-group, .highcharts-navigator, .highcharts-scrollbar"
+        )
+      ) {
+        return;
+      }
+      const point = chart.pointer.normalize(e);
+      if (!chart.isInsidePlot(point.chartX - chart.plotLeft, point.chartY - chart.plotTop)) {
+        return;
+      }
       isDragging = true;
       dragStartX = e.clientX;
       dragStartY = e.clientY;
@@ -823,27 +887,6 @@ const Dashboard = ({ user, onAdd }: Props) => {
       chart.container.style.cursor = 'crosshair';
     });
 
-    // Mouse wheel → zoom (only fires when cursor is inside chart)
-    chart.container.addEventListener('wheel', (e: WheelEvent) => {
-      if (!chart.container.contains(e.target as Node)) return;
-      e.preventDefault();
-      e.stopPropagation();
-      const xAxis = chart.xAxis[0];
-      const yAxis = chart.yAxis[0];
-      const xMin = typeof xAxis.min === 'number' ? xAxis.min : 0;
-      const xMax = typeof xAxis.max === 'number' ? xAxis.max : 1;
-      const yMin = typeof yAxis.min === 'number' ? yAxis.min : 0;
-      const yMax = typeof yAxis.max === 'number' ? yAxis.max : 1;
-      const f = e.deltaY > 0 ? 1.1 : 0.9;
-      const pt = chart.pointer.normalize(e);
-      const mx = xAxis.toValue(pt.chartX);
-      const my = yAxis.toValue(pt.chartY);
-      const xRange = xMax - xMin, yRange = yMax - yMin;
-      const xf = (mx - xMin) / xRange, yf = (my - yMin) / yRange;
-      xAxis.setExtremes(mx - xRange * f * xf, mx + xRange * f * (1 - xf), false);
-      yAxis.setExtremes(my - yRange * f * yf, my + yRange * f * (1 - yf), true);
-    }, { passive: false });
-
     // Double-click → reset
     chart.container.addEventListener('dblclick', () => {
       chart.xAxis[0].setExtremes(undefined, undefined, false);
@@ -863,6 +906,7 @@ const Dashboard = ({ user, onAdd }: Props) => {
       borderRadius: 0,
       zoomType: undefined,
       panning: { enabled: false },
+      zooming: { mouseWheel: { enabled: false } },
       reflow: true,
       resetZoomButton: { theme: { display: "none" } },
       events: {
@@ -903,15 +947,33 @@ const Dashboard = ({ user, onAdd }: Props) => {
       minorGridLineWidth: 0,
       tickInterval: 7 * 24 * 3600 * 1000,
     },
-    yAxis: {
-      title: { text: undefined },
-      gridLineColor: "rgba(59, 130, 246, 0.12)",
-      gridLineWidth: 1,
+      yAxis: {
+        title: { text: undefined },
+        gridLineColor: "rgba(59, 130, 246, 0.12)",
+        gridLineWidth: 1,
+        crosshair: {
+          width: 1,
+          color: "rgba(96, 165, 250, 0.7)",
+          dashStyle: "Dash",
+          snap: false,
+          label: {
+            enabled: true,
+            backgroundColor: "#2563eb",
+            borderColor: "#60a5fa",
+            borderRadius: 4,
+            borderWidth: 1,
+            padding: 6,
+            style: { color: "#ffffff", fontSize: "11px", fontWeight: "700" },
+            formatter(value) {
+              return formatMoney(value);
+            },
+          },
+        },
       labels: {
         style: { color: "#5e6b80", fontSize: "12px", fontFamily: "Inter, sans-serif", fontWeight: "600" },
         formatter() { return formatMoney(Number(this.value)); },
       },
-      opposite: false,
+      opposite: true,
       // Auto-scale Y axis based on actual data with padding
       startOnTick: false,
       endOnTick: false,
@@ -926,6 +988,7 @@ const Dashboard = ({ user, onAdd }: Props) => {
       })(),
     },
     tooltip: {
+      enabled: false,
       useHTML: true,
       backgroundColor: "transparent",
       borderWidth: 0,
@@ -1050,11 +1113,21 @@ const Dashboard = ({ user, onAdd }: Props) => {
     },
     tooltip: {
       trigger: "axis",
+      transitionDuration: 0.12,
       axisPointer: { 
         type: "cross", 
-        animation: true, 
-        lineStyle: { color: "rgba(59,130,246,0.3)", type: "solid", width: 2 }, 
-        crossStyle: { color: "rgba(59,130,246,0.3)", width: 2 } 
+        animation: false,
+        lineStyle: { color: "rgba(96,165,250,0.6)", type: "dashed", width: 1 },
+        crossStyle: { color: "rgba(96,165,250,0.6)", width: 1 },
+        label: {
+          show: true,
+          backgroundColor: "#1d4ed8",
+          borderColor: "#60a5fa",
+          borderWidth: 1,
+          borderRadius: 4,
+          padding: [5, 8],
+          color: "#ffffff",
+        },
       },
       backgroundColor: "transparent",
       borderWidth: 0,
@@ -1084,13 +1157,42 @@ const Dashboard = ({ user, onAdd }: Props) => {
       axisLabel: { color: "#5e6b80", fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 600 },
       boundaryGap: false,
       gridLineColor: "rgba(59, 130, 246, 0.08)",
+      axisPointer: {
+        show: true,
+        label: {
+          show: true,
+          backgroundColor: "#1d4ed8",
+          borderColor: "#60a5fa",
+          borderWidth: 1,
+          borderRadius: 4,
+          padding: [5, 8],
+          formatter: (params: { value: number }) =>
+            new Date(params.value).toLocaleDateString("en-IN", {
+              day: "2-digit",
+              month: "short",
+            }),
+        },
+      },
     },
     yAxis: {
       type: "value",
+      position: "right",
       boundaryGap: [0, "15%"],
       splitLine: { lineStyle: { color: "rgba(59, 130, 246, 0.12)", type: "dashed", width: 1 } },
       axisLabel: { color: "#5e6b80", fontFamily: "Inter, sans-serif", fontSize: 12, fontWeight: 600, formatter: (value: number) => formatMoney(value) },
       axisLine: { lineStyle: { color: "rgba(59, 130, 246, 0.2)" } },
+      axisPointer: {
+        show: true,
+        label: {
+          show: true,
+          backgroundColor: "#1d4ed8",
+          borderColor: "#60a5fa",
+          borderWidth: 1,
+          borderRadius: 4,
+          padding: [5, 8],
+          formatter: (params: { value: number }) => formatMoney(params.value),
+        },
+      },
     },
     series: [
       {
@@ -1111,7 +1213,14 @@ const Dashboard = ({ user, onAdd }: Props) => {
             ],
           },
         },
-        emphasis: { scale: 1.05, lineStyle: { width: 2.8 }, shadowColor: "rgba(16, 185, 129, 0.25)", shadowBlur: 10 },
+        emphasis: {
+          focus: "series",
+          scale: true,
+          lineStyle: { width: 3 },
+          itemStyle: { borderColor: "#ffffff", borderWidth: 2 },
+          shadowColor: "rgba(16, 185, 129, 0.35)",
+          shadowBlur: 14,
+        },
         data: profitLossData.map((item) => [item.date, item.profit]),
       },
       {
@@ -1132,7 +1241,14 @@ const Dashboard = ({ user, onAdd }: Props) => {
             ],
           },
         },
-        emphasis: { scale: 1.05, lineStyle: { width: 2.5 }, shadowColor: "rgba(239, 68, 68, 0.25)", shadowBlur: 10 },
+        emphasis: {
+          focus: "series",
+          scale: true,
+          lineStyle: { width: 3 },
+          itemStyle: { borderColor: "#ffffff", borderWidth: 2 },
+          shadowColor: "rgba(239, 68, 68, 0.35)",
+          shadowBlur: 14,
+        },
         data: profitLossData.map((item) => [item.date, item.loss]),
       },
     ],
@@ -1336,7 +1452,11 @@ const Dashboard = ({ user, onAdd }: Props) => {
           title="Current balance"
           value={currentBalance}
           formatValue={(value) => formatCurrency(value, user.currency)}
-          subtitle={`${netPerformance >= 0 ? "+" : "-"}${formatCurrency(Math.abs(netPerformance), user.currency)} net`}
+          subtitle={
+            user.investmentIncluded && (user.investments ?? []).length > 0
+              ? `+${formatCurrency(Math.abs(netPerformance), user.currency)} net · incl. investments`
+              : `${netPerformance >= 0 ? "+" : "-"}${formatCurrency(Math.abs(netPerformance), user.currency)} net`
+          }
           positive={netPerformance >= 0}
           icon={<Wallet size={19} />}
           colorVariant="blue"

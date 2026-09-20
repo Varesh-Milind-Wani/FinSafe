@@ -12,6 +12,8 @@ import Login from "./pages/Login";
 import Transactions from "./pages/Transactions";
 import Withdrawals from "./pages/Withdrawals";
 import Chat from "./pages/Chat";
+import InvestmentPage from "./pages/Investment";
+import Expenses from "./pages/Expenses";
 
 import {
   addStorageChangeListener,
@@ -19,6 +21,7 @@ import {
   logoutUser,
   updateUser,
 } from "./utils/storage";
+import { calculateCurrentBalance } from "./utils/balance";
 
 import type {
   Transaction,
@@ -33,7 +36,7 @@ const App = () => {
 
   const [activePage, setActivePage] =
     useState<
-      "dashboard" | "transactions" | "analytics" | "profitloss" | "withdrawals" | "settings" | "chat"
+      "dashboard" | "transactions" | "analytics" | "profitloss" | "withdrawals" | "settings" | "chat" | "investment" | "expenses"
     >("dashboard");
 
   const [modalOpen, setModalOpen] =
@@ -90,24 +93,11 @@ const App = () => {
       transactions: nextTransactions,
     };
 
-    // Force recalculate current balance using net amounts (after costs)
-    // Don't override manual balance from Settings unless transaction changed
-    const shouldUpdateBalance = !transactionExists; // Only update if adding new transaction
-    
-    let recalculatedBalance = user.currentBalance;
-    if (shouldUpdateBalance || user.currentBalance === undefined) {
-      recalculatedBalance = updatedUser.startingBalance + 
-        updatedUser.transactions
-          .filter(t => t.type === "profit")
-          .reduce((sum, t) => sum + t.amount, 0) -
-        updatedUser.transactions
-          .filter(t => t.type === "loss")
-          .reduce((sum, t) => sum + t.amount, 0);
-    }
-
     const finalUser: UserAccount = {
       ...updatedUser,
-      currentBalance: recalculatedBalance,
+      // Transaction amounts are already net of any applied cost. Recompute for
+      // every save, including edits, so every page receives the same balance.
+      currentBalance: calculateCurrentBalance(updatedUser),
     };
 
     updateUser(finalUser);
@@ -132,23 +122,13 @@ const App = () => {
       (transaction) => transaction.id !== id
     );
 
-    // Recalculate balance after deletion using net amounts (after costs)
-    // Only update if no manual balance override exists
-    let recalculatedBalance = user.currentBalance;
-    if (user.currentBalance === undefined) {
-      recalculatedBalance = user.startingBalance + 
-        filteredTransactions
-          .filter(t => t.type === "profit")
-          .reduce((sum, t) => sum + t.amount, 0) -
-        filteredTransactions
-          .filter(t => t.type === "loss")
-          .reduce((sum, t) => sum + t.amount, 0);
-    }
-
-    const updatedUser: UserAccount = {
+    const transactionsUpdatedUser: UserAccount = {
       ...user,
       transactions: filteredTransactions,
-      currentBalance: recalculatedBalance,
+    };
+    const updatedUser: UserAccount = {
+      ...transactionsUpdatedUser,
+      currentBalance: calculateCurrentBalance(transactionsUpdatedUser),
     };
 
     updateUser(updatedUser);
@@ -177,9 +157,9 @@ const App = () => {
       | "withdrawals"
       | "settings"
       | "chat"
+      | "investment"
   ) => {
     setActivePage(page);
-
     setMobileMenuOpen(false);
   };
 
@@ -213,35 +193,27 @@ const App = () => {
           <div>
             <span className="breadcrumb">
               FinTrack /{" "}
-              {activePage === "dashboard"
-                ? "Dashboard"
-                : activePage === "transactions"
-                  ? "Transactions"
-                  : activePage === "analytics"
-                    ? "Analytics"
-                    : activePage === "profitloss"
-                      ? "P&L"
-                      : activePage === "withdrawals"
-                        ? "Withdrawals"
-                        : activePage === "chat"
-                          ? "Chat Assistant"
-                          : "Settings"}
+              {activePage === "dashboard" ? "Dashboard"
+                : activePage === "transactions" ? "Transactions"
+                : activePage === "analytics" ? "Analytics"
+                : activePage === "profitloss" ? "P&L"
+                : activePage === "withdrawals" ? "Withdrawals"
+                : activePage === "chat" ? "Chat Assistant"
+                : activePage === "investment" ? "Investment"
+                : activePage === "expenses" ? "Expenses"
+                : "Settings"}
             </span>
 
             <h2>
-              {activePage === "dashboard"
-                ? "Financial overview"
-                : activePage === "transactions"
-                  ? "Transaction records"
-                  : activePage === "analytics"
-                    ? "Analytics"
-                    : activePage === "profitloss"
-                      ? "Profit & Loss Analysis"
-                      : activePage === "withdrawals"
-                        ? "Withdrawals"
-                        : activePage === "chat"
-                          ? "Chat Assistant"
-                          : "Settings"}
+              {activePage === "dashboard" ? "Financial overview"
+                : activePage === "transactions" ? "Transaction records"
+                : activePage === "analytics" ? "Analytics"
+                : activePage === "profitloss" ? "Profit & Loss Analysis"
+                : activePage === "withdrawals" ? "Withdrawals"
+                : activePage === "chat" ? "Chat Assistant"
+                : activePage === "investment" ? "Investment Portfolio"
+                : activePage === "expenses" ? "Expense Tracker"
+                : "Settings"}
             </h2>
           </div>
         </header>
@@ -263,9 +235,13 @@ const App = () => {
             onDelete={handleDeleteTransaction}
             onEdit={handleEditTransaction}
             onImport={(importedTransactions) => {
-              const updatedUser: UserAccount = {
+              const transactionsUpdatedUser: UserAccount = {
                 ...user,
                 transactions: [...importedTransactions, ...user.transactions],
+              };
+              const updatedUser: UserAccount = {
+                ...transactionsUpdatedUser,
+                currentBalance: calculateCurrentBalance(transactionsUpdatedUser),
               };
               updateUser(updatedUser);
               setUser(updatedUser);
@@ -288,6 +264,16 @@ const App = () => {
             onAddTransaction={handleSaveTransaction}
             user={user}
           />
+        ) : activePage === "investment" ? (
+          <InvestmentPage
+            user={user}
+            onSave={(updatedUser) => {
+              updateUser(updatedUser);
+              setUser(updatedUser);
+            }}
+          />
+        ) : activePage === "expenses" ? (
+          <Expenses user={user} onSave={(updatedUser) => { updateUser(updatedUser); setUser(updatedUser); }} />
         ) : (
           <Settings
             user={user}

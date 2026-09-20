@@ -1,5 +1,17 @@
 export type TransactionType = "profit" | "loss";
 
+export type InvestmentType = "stocks" | "mutual_fund" | "crypto" | "gold" | "real_estate" | "fd" | "other";
+
+export interface Investment {
+  id: string;
+  name: string;
+  type: InvestmentType;
+  amount: number;          // Amount invested
+  currentValue: number;    // Current market value
+  date: string;            // Date of investment
+  note: string;
+}
+
 export interface Withdrawal {
   id: string;
   date: string;
@@ -7,6 +19,15 @@ export interface Withdrawal {
   method: "bank" | "crypto" | "cash" | "other";
   note: string;
   status: "pending" | "completed" | "cancelled";
+}
+
+export interface Expense {
+  id: string;
+  name: string;
+  category: string;
+  amount: number;
+  date: string;
+  note: string;
 }
 
 export interface Transaction {
@@ -53,8 +74,18 @@ export interface UserAccount {
   transactions: Transaction[];
   /** Tracks manual balance adjustments */
   currentBalance?: number;
+  /** Persistent rebalance offset applied on top of transaction performance. */
+  balanceAdjustment?: number;
   /** Withdrawal history */
   withdrawals?: Withdrawal[];
+  /** Investment portfolio */
+  investments?: Investment[];
+  /** Expenses recorded separately from trading activity. */
+  expenses?: Expense[];
+  /** When true, investment total is added to balance across the entire app */
+  investmentIncluded?: boolean;
+  /** Enables the dedicated expense tracker and includes its total in balance. */
+  expenseTrackingEnabled?: boolean;
   /** Whether the default cost amount is locked */
   costLocked?: boolean;
 }

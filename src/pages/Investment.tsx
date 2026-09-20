@@ -1,357 +1,56 @@
-import { useState, useMemo } from "react";
-import {
-  Plus, Pencil, Trash2, TrendingUp, TrendingDown,
-  Wallet, X, Check, IndianRupee
-} from "lucide-react";
+import { useMemo, useState } from "react";
+import { ChartNoAxesCombined, Check, Landmark, Pencil, Plus, TrendingDown, TrendingUp, Trash2, Wallet, X } from "lucide-react";
 import type { Investment, InvestmentType, UserAccount } from "../types/finance";
 import { formatCurrency } from "../utils/money";
 
-interface Props {
-  user: UserAccount;
-  onSave: (updatedUser: UserAccount) => void;
-}
+interface Props { user: UserAccount; onSave: (updatedUser: UserAccount) => void; }
 
-const TYPE_LABELS: Record<InvestmentType, string> = {
-  stocks: "Stocks",
-  mutual_fund: "Mutual Fund",
-  crypto: "Crypto",
-  gold: "Gold",
-  real_estate: "Real Estate",
-  fd: "Fixed Deposit",
-  other: "Other",
-};
-
-const TYPE_COLORS: Record<InvestmentType, string> = {
-  stocks: "#3b82f6",
-  mutual_fund: "#10b981",
-  crypto: "#f59e0b",
-  gold: "#eab308",
-  real_estate: "#8b5cf6",
-  fd: "#06b6d4",
-  other: "#6b7280",
-};
-
-const emptyForm = (): Omit<Investment, "id"> => ({
-  name: "",
-  type: "stocks",
-  amount: 0,
-  currentValue: 0,
-  date: new Date().toISOString().split("T")[0],
-  note: "",
-});
+const TYPE_LABELS: Record<InvestmentType, string> = { stocks: "Stocks", mutual_fund: "Mutual Fund", crypto: "Crypto", gold: "Gold", real_estate: "Real Estate", fd: "Fixed Deposit", other: "Other" };
+const TYPE_COLORS: Record<InvestmentType, string> = { stocks: "#60a5fa", mutual_fund: "#34d399", crypto: "#fbbf24", gold: "#facc15", real_estate: "#a78bfa", fd: "#22d3ee", other: "#94a3b8" };
+const emptyForm = (): Omit<Investment, "id"> => ({ name: "", type: "stocks", amount: 0, currentValue: 0, date: new Date().toISOString().split("T")[0], note: "" });
 
 const InvestmentPage = ({ user, onSave }: Props) => {
   const investments = user.investments ?? [];
-  const currency = user.currency ?? "INR";
-
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Investment | null>(null);
   const [form, setForm] = useState(emptyForm());
   const [filterType, setFilterType] = useState<InvestmentType | "all">("all");
-
   const stats = useMemo(() => {
-    const totalInvested = investments.reduce((s, i) => s + i.amount, 0);
-    const totalCurrent = investments.reduce((s, i) => s + i.currentValue, 0);
+    const totalInvested = investments.reduce((total, item) => total + item.amount, 0);
+    const totalCurrent = investments.reduce((total, item) => total + item.currentValue, 0);
     const pnl = totalCurrent - totalInvested;
-    const pnlPct = totalInvested > 0 ? (pnl / totalInvested) * 100 : 0;
-    return { totalInvested, totalCurrent, pnl, pnlPct };
+    return { totalInvested, totalCurrent, pnl, pnlPct: totalInvested ? (pnl / totalInvested) * 100 : 0 };
   }, [investments]);
-
-  const filtered = useMemo(() =>
-    filterType === "all" ? investments : investments.filter(i => i.type === filterType),
-    [investments, filterType]
-  );
-
-  const openAdd = () => {
-    setEditing(null);
-    setForm(emptyForm());
-    setShowModal(true);
-  };
-
-  const openEdit = (inv: Investment) => {
-    setEditing(inv);
-    setForm({ name: inv.name, type: inv.type, amount: inv.amount, currentValue: inv.currentValue, date: inv.date.split("T")[0], note: inv.note });
-    setShowModal(true);
-  };
-
-  const handleSave = () => {
+  const filtered = useMemo(() => filterType === "all" ? investments : investments.filter((item) => item.type === filterType), [investments, filterType]);
+  const fmt = (value: number) => formatCurrency(value, user.currency ?? "INR");
+  const openAdd = () => { setEditing(null); setForm(emptyForm()); setShowModal(true); };
+  const openEdit = (item: Investment) => { setEditing(item); setForm({ ...item, date: item.date.split("T")[0] }); setShowModal(true); };
+  const save = () => {
     if (!form.name.trim() || form.amount <= 0) return;
-    const list = [...investments];
-    if (editing) {
-      const idx = list.findIndex(i => i.id === editing.id);
-      if (idx !== -1) list[idx] = { ...editing, ...form };
-    } else {
-      list.unshift({ id: crypto.randomUUID(), ...form });
-    }
-    onSave({ ...user, investments: list });
-    setShowModal(false);
+    const next = editing ? investments.map((item) => item.id === editing.id ? { ...editing, ...form } : item) : [{ id: crypto.randomUUID(), ...form }, ...investments];
+    onSave({ ...user, investments: next }); setShowModal(false);
   };
+  const remove = (id: string) => { if (window.confirm("Delete this investment?")) onSave({ ...user, investments: investments.filter((item) => item.id !== id) }); };
 
-  const handleDelete = (id: string) => {
-    if (!window.confirm("Delete this investment?")) return;
-    onSave({ ...user, investments: investments.filter(i => i.id !== id) });
-  };
-
-  const fmt = (v: number) => formatCurrency(v, currency);
-
-  return (
-    <div className="page-container">
-      {/* Header */}
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Investment Portfolio</h1>
-          <p className="page-subtitle">Track and manage your investments in one place.</p>
-        </div>
-        <button className="btn-primary" onClick={openAdd}>
-          <Plus size={16} /> Add Investment
-        </button>
-      </div>
-
-      {/* Stats cards */}
-      <div className="stats-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginBottom: 24 }}>
-        <div className="stat-card">
-          <div className="stat-card-header">
-            <span className="stat-card-title">TOTAL INVESTED</span>
-            <div className="stat-card-icon blue"><Wallet size={19} /></div>
-          </div>
-          <div className="stat-card-value">{fmt(stats.totalInvested)}</div>
-          <div className="stat-card-subtitle positive">{investments.length} investments</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-card-header">
-            <span className="stat-card-title">CURRENT VALUE</span>
-            <div className="stat-card-icon green"><IndianRupee size={19} /></div>
-          </div>
-          <div className="stat-card-value">{fmt(stats.totalCurrent)}</div>
-          <div className="stat-card-subtitle positive">Portfolio value</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-card-header">
-            <span className="stat-card-title">TOTAL P&L</span>
-            <div className={`stat-card-icon ${stats.pnl >= 0 ? "green" : "red"}`}>
-              {stats.pnl >= 0 ? <TrendingUp size={19} /> : <TrendingDown size={19} />}
-            </div>
-          </div>
-          <div className="stat-card-value" style={{ color: stats.pnl >= 0 ? "#10b981" : "#ef4444" }}>
-            {stats.pnl >= 0 ? "+" : ""}{fmt(stats.pnl)}
-          </div>
-          <div className={`stat-card-subtitle ${stats.pnl >= 0 ? "positive" : "negative"}`}>
-            {stats.pnlPct >= 0 ? "+" : ""}{stats.pnlPct.toFixed(2)}% return
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-card-header">
-            <span className="stat-card-title">UNREALISED GAIN</span>
-            <div className={`stat-card-icon ${stats.pnl >= 0 ? "green" : "red"}`}>
-              <TrendingUp size={19} />
-            </div>
-          </div>
-          <div className="stat-card-value" style={{ color: stats.pnl >= 0 ? "#10b981" : "#ef4444" }}>
-            {stats.pnlPct.toFixed(1)}%
-          </div>
-          <div className="stat-card-subtitle">Overall ROI</div>
-        </div>
-      </div>
-
-      {/* Filter chips */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
-        {(["all", ...Object.keys(TYPE_LABELS)] as (InvestmentType | "all")[]).map(t => (
-          <button
-            key={t}
-            onClick={() => setFilterType(t)}
-            style={{
-              padding: "6px 14px",
-              borderRadius: 20,
-              border: `1.5px solid ${filterType === t ? "#3b82f6" : "rgba(59,130,246,0.2)"}`,
-              background: filterType === t ? "rgba(59,130,246,0.2)" : "rgba(30,41,59,0.6)",
-              color: filterType === t ? "#60a5fa" : "#94a3b8",
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: "pointer",
-              transition: "all 0.2s",
-            }}
-          >
-            {t === "all" ? "All Types" : TYPE_LABELS[t as InvestmentType]}
-          </button>
-        ))}
-      </div>
-
-      {/* Table */}
-      <div className="enterprise-table-container">
-        <table className="enterprise-table">
-          <thead>
-            <tr>
-              <th>NAME</th>
-              <th>TYPE</th>
-              <th>DATE</th>
-              <th>INVESTED</th>
-              <th>CURRENT VALUE</th>
-              <th>P&L</th>
-              <th>RETURN %</th>
-              <th>NOTE</th>
-              <th style={{ textAlign: "center" }}>ACTIONS</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.length === 0 ? (
-              <tr>
-                <td colSpan={9} style={{ textAlign: "center", padding: "48px 0", color: "#5e6b80" }}>
-                  <Wallet size={32} style={{ margin: "0 auto 12px", display: "block", opacity: 0.4 }} />
-                  <p>No investments yet. Click <strong>Add Investment</strong> to get started.</p>
-                </td>
-              </tr>
-            ) : (
-              filtered.map(inv => {
-                const pnl = inv.currentValue - inv.amount;
-                const pct = inv.amount > 0 ? (pnl / inv.amount) * 100 : 0;
-                return (
-                  <tr key={inv.id}>
-                    <td style={{ fontWeight: 700, color: "#e2e8f0" }}>{inv.name}</td>
-                    <td>
-                      <span style={{
-                        padding: "3px 10px",
-                        borderRadius: 12,
-                        fontSize: 11,
-                        fontWeight: 700,
-                        background: `${TYPE_COLORS[inv.type]}22`,
-                        color: TYPE_COLORS[inv.type],
-                        border: `1px solid ${TYPE_COLORS[inv.type]}44`,
-                      }}>
-                        {TYPE_LABELS[inv.type]}
-                      </span>
-                    </td>
-                    <td style={{ color: "#9aa5ba", fontSize: 13 }}>
-                      {new Date(inv.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
-                    </td>
-                    <td style={{ color: "#e2e8f0", fontWeight: 600 }}>{fmt(inv.amount)}</td>
-                    <td style={{ color: "#e2e8f0", fontWeight: 600 }}>{fmt(inv.currentValue)}</td>
-                    <td style={{ color: pnl >= 0 ? "#10b981" : "#ef4444", fontWeight: 700 }}>
-                      {pnl >= 0 ? "+" : ""}{fmt(pnl)}
-                    </td>
-                    <td style={{ color: pct >= 0 ? "#10b981" : "#ef4444", fontWeight: 700 }}>
-                      {pct >= 0 ? "+" : ""}{pct.toFixed(2)}%
-                    </td>
-                    <td style={{ color: "#9aa5ba", fontSize: 12, maxWidth: 160 }}>{inv.note || "—"}</td>
-                    <td>
-                      <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
-                        <button className="action-button" onClick={() => openEdit(inv)} title="Edit">
-                          <Pencil size={14} />
-                        </button>
-                        <button className="action-button delete" onClick={() => handleDelete(inv.id)} title="Delete">
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Modal */}
-      {showModal && (
-        <div className="modal-overlay" onMouseDown={e => { if (e.target === e.currentTarget) setShowModal(false); }}>
-          <div className="transaction-modal" role="dialog" aria-modal="true" style={{ maxWidth: 520 }}>
-            <div className="modal-header">
-              <div className="modal-header-text">
-                <span className="eyebrow">{editing ? "EDIT INVESTMENT" : "NEW INVESTMENT"}</span>
-                <h2>{editing ? "Edit Investment" : "Add Investment"}</h2>
-                <p>Record your investment details below.</p>
-              </div>
-              <button className="close-button" onClick={() => setShowModal(false)}><X size={18} /></button>
-            </div>
-
-            <div className="modal-form" style={{ display: "flex", flexDirection: "column", gap: 16, padding: "0 0 8px" }}>
-              {/* Name */}
-              <label className="form-group">
-                <span className="field-label-text">Investment Name</span>
-                <input
-                  className="form-input"
-                  placeholder="e.g. Reliance Industries"
-                  value={form.name}
-                  onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                />
-              </label>
-
-              {/* Type */}
-              <label className="form-group">
-                <span className="field-label-text">Type</span>
-                <select
-                  className="form-input"
-                  value={form.type}
-                  onChange={e => setForm(f => ({ ...f, type: e.target.value as InvestmentType }))}
-                >
-                  {Object.entries(TYPE_LABELS).map(([k, v]) => (
-                    <option key={k} value={k}>{v}</option>
-                  ))}
-                </select>
-              </label>
-
-              {/* Amount & Current Value */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <label className="form-group">
-                  <span className="field-label-text">Amount Invested (₹)</span>
-                  <input
-                    type="number"
-                    min="0"
-                    className="form-input"
-                    placeholder="0"
-                    value={form.amount || ""}
-                    onChange={e => setForm(f => ({ ...f, amount: Number(e.target.value) }))}
-                  />
-                </label>
-                <label className="form-group">
-                  <span className="field-label-text">Current Value (₹)</span>
-                  <input
-                    type="number"
-                    min="0"
-                    className="form-input"
-                    placeholder="0"
-                    value={form.currentValue || ""}
-                    onChange={e => setForm(f => ({ ...f, currentValue: Number(e.target.value) }))}
-                  />
-                </label>
-              </div>
-
-              {/* Date */}
-              <label className="form-group">
-                <span className="field-label-text">Date</span>
-                <input
-                  type="date"
-                  className="form-input"
-                  value={form.date}
-                  onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
-                />
-              </label>
-
-              {/* Note */}
-              <label className="form-group">
-                <span className="field-label-text">Note (optional)</span>
-                <input
-                  className="form-input"
-                  placeholder="e.g. Long term holding"
-                  value={form.note}
-                  onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
-                />
-              </label>
-
-              {/* Buttons */}
-              <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
-                <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setShowModal(false)}>
-                  Cancel
-                </button>
-                <button className="btn-primary" style={{ flex: 1 }} onClick={handleSave}>
-                  <Check size={15} /> {editing ? "Save Changes" : "Add Investment"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+  return <div className="page-content investment-page">
+    <div className="page-heading investment-heading"><div><span className="eyebrow">WEALTH MANAGEMENT</span><h1>Investment portfolio</h1><p>See your holdings, performance, and long-term growth in one place.</p></div><button className="primary-button investment-add-button" onClick={openAdd}><Plus size={17} /> Add investment</button></div>
+    <div className="investment-summary-grid">
+      <Summary label="Total invested" value={fmt(stats.totalInvested)} detail={`${investments.length} ${investments.length === 1 ? "holding" : "holdings"} tracked`} icon={<Wallet size={19} />} kind="invested" />
+      <Summary label="Current value" value={fmt(stats.totalCurrent)} detail="Live portfolio value" icon={<Landmark size={19} />} kind="value" />
+      <Summary label="Total P&L" value={`${stats.pnl >= 0 ? "+" : ""}${fmt(stats.pnl)}`} detail={`${stats.pnlPct >= 0 ? "+" : ""}${stats.pnlPct.toFixed(2)}% total return`} icon={stats.pnl >= 0 ? <TrendingUp size={19} /> : <TrendingDown size={19} />} kind={stats.pnl >= 0 ? "gain" : "loss"} />
+      <Summary label="Portfolio ROI" value={`${stats.pnlPct >= 0 ? "+" : ""}${stats.pnlPct.toFixed(1)}%`} detail={stats.pnl >= 0 ? "Unrealised gain" : "Unrealised loss"} icon={<ChartNoAxesCombined size={19} />} kind={stats.pnl >= 0 ? "roi-gain" : "roi-loss"} />
     </div>
-  );
+    <section className="investment-filter-panel"><div><span className="eyebrow">HOLDINGS</span><p>Filter by asset class</p></div><div className="investment-filter-chips">{(["all", ...Object.keys(TYPE_LABELS)] as (InvestmentType | "all")[]).map((type) => <button key={type} onClick={() => setFilterType(type)} className={filterType === type ? "investment-filter active" : "investment-filter"}>{type === "all" ? "All types" : TYPE_LABELS[type]}</button>)}</div></section>
+    <section className="investment-holdings-card"><div className="investment-holdings-header"><div><h3>Portfolio holdings</h3><p>{filtered.length} of {investments.length} holdings shown</p></div><span className="investment-holdings-value">{fmt(stats.totalCurrent)}</span></div><div className="investment-table-scroll"><table className="investment-table"><thead><tr><th>Name</th><th>Type</th><th>Date</th><th>Invested</th><th>Current value</th><th>P&amp;L</th><th>Return</th><th>Note</th><th className="investment-actions-heading">Actions</th></tr></thead><tbody>{filtered.length === 0 ? <tr><td colSpan={9} className="investment-empty"><Wallet size={32} /><p>No investments yet. Click <strong>Add investment</strong> to get started.</p></td></tr> : filtered.map((item) => {
+      const pnl = item.currentValue - item.amount; const pct = item.amount ? pnl / item.amount * 100 : 0; const positive = pnl >= 0;
+      return <tr key={item.id}><td className="investment-name">{item.name}</td><td><span className="investment-type-badge" style={{ color: TYPE_COLORS[item.type], borderColor: `${TYPE_COLORS[item.type]}55`, backgroundColor: `${TYPE_COLORS[item.type]}16` }}>{TYPE_LABELS[item.type]}</span></td><td className="investment-date">{new Date(item.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</td><td className="investment-money">{fmt(item.amount)}</td><td className="investment-money">{fmt(item.currentValue)}</td><td className={positive ? "investment-positive" : "investment-negative"}>{positive ? "+" : ""}{fmt(pnl)}</td><td className={positive ? "investment-positive" : "investment-negative"}>{positive ? "+" : ""}{pct.toFixed(2)}%</td><td className="investment-note">{item.note || "—"}</td><td><div className="investment-actions"><button className="action-button" onClick={() => openEdit(item)} title="Edit investment"><Pencil size={14} /></button><button className="action-button delete" onClick={() => remove(item.id)} title="Delete investment"><Trash2 size={14} /></button></div></td></tr>;
+    })}</tbody></table></div></section>
+    {showModal && <InvestmentModal editing={editing} form={form} setForm={setForm} onClose={() => setShowModal(false)} onSave={save} />}
+  </div>;
 };
+
+const Summary = ({ label, value, detail, icon, kind }: { label: string; value: string; detail: string; icon: React.ReactNode; kind: string }) => <div className={`investment-summary-card ${kind}`}><div className="investment-summary-top"><span>{label}</span><div className="investment-summary-icon">{icon}</div></div><strong>{value}</strong><small>{detail}</small></div>;
+
+const InvestmentModal = ({ editing, form, setForm, onClose, onSave }: { editing: Investment | null; form: Omit<Investment, "id">; setForm: React.Dispatch<React.SetStateAction<Omit<Investment, "id">>>; onClose: () => void; onSave: () => void }) => <div className="modal-overlay" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><div className="transaction-modal investment-modal" role="dialog" aria-modal="true"><div className="modal-header"><div className="modal-header-text"><span className="eyebrow">{editing ? "EDIT INVESTMENT" : "NEW INVESTMENT"}</span><h2>{editing ? "Edit investment" : "Add investment"}</h2><p>Keep your portfolio records accurate and up to date.</p></div><button className="close-button" onClick={onClose}><X size={18} /></button></div><div className="modal-body"><div className="form-grid"><label>Investment name<input value={form.name} placeholder="e.g. Reliance Industries" onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} /></label><label>Asset type<select value={form.type} onChange={(event) => setForm((current) => ({ ...current, type: event.target.value as InvestmentType }))}>{Object.entries(TYPE_LABELS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label><label>Amount invested<input type="number" min="0" value={form.amount || ""} onChange={(event) => setForm((current) => ({ ...current, amount: Number(event.target.value) }))} /></label><label>Current value<input type="number" min="0" value={form.currentValue || ""} onChange={(event) => setForm((current) => ({ ...current, currentValue: Number(event.target.value) }))} /></label><label>Date<input type="date" value={form.date} onChange={(event) => setForm((current) => ({ ...current, date: event.target.value }))} /></label></div><label className="investment-note-field">Note<input value={form.note} placeholder="e.g. Long-term holding" onChange={(event) => setForm((current) => ({ ...current, note: event.target.value }))} /></label></div><div className="modal-footer"><button className="secondary-button" onClick={onClose}>Cancel</button><button className="primary-button" onClick={onSave}><Check size={15} /> {editing ? "Save changes" : "Add investment"}</button></div></div></div>;
 
 export default InvestmentPage;

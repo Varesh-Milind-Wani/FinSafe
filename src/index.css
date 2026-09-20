@@ -2127,3 +2127,147 @@ select:focus-visible {
 
   .top-header h2 { font-size: 14px; }
 }
+
+/* Monthly reports */
+.report-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.report-summary-card,
+.reports-table-card,
+.reports-lock-notice {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.report-summary-card { padding: 20px; }
+.report-summary-card span { display: block; color: var(--text-3); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+.report-summary-card strong { display: block; margin-top: 8px; font-size: 25px; }
+.report-summary-card.profit strong, .report-profit { color: var(--green); }
+.report-summary-card.loss strong, .report-loss { color: var(--red); }
+
+.reports-lock-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 16px;
+  margin-bottom: 18px;
+  color: var(--text-2);
+  font-size: 13px;
+}
+.reports-lock-notice svg { color: #f59e0b; flex: none; }
+.reports-table-card { overflow-x: auto; }
+.reports-table { width: 100%; min-width: 780px; border-collapse: collapse; }
+.reports-table th, .reports-table td { padding: 16px 18px; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; }
+.reports-table th { color: var(--text-3); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+.reports-table tbody tr:last-child td { border-bottom: 0; }
+.report-lock-button { display: inline-flex; align-items: center; gap: 7px; padding: 8px 12px; font-size: 12px; }
+.month-status { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 5px 9px; font-size: 12px; font-weight: 700; }
+.month-status.locked { color: #fbbf24; background: rgba(245, 158, 11, .12); }
+.month-status.open { color: var(--green); background: var(--green-dim); }
+.reports-empty { text-align: center !important; color: var(--text-3); padding: 42px !important; }
+
+/* Reports refinement */
+.reports-heading { margin-bottom: 22px; }
+.reports-heading-badge { display: inline-flex; align-items: center; gap: 8px; padding: 10px 13px; border: 1px solid var(--border-2); border-radius: 10px; color: var(--text-2); background: var(--surface-2); font-size: 12px; font-weight: 700; }
+.reports-heading-badge svg { color: var(--blue); }
+.report-summary-card { min-height: 145px; padding: 19px; position: relative; overflow: hidden; background: linear-gradient(145deg, var(--surface-2), var(--surface)); }
+.report-summary-card::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle at 100% 0, rgba(79, 143, 255, .1), transparent 43%); }
+.report-summary-card.profit::after, .report-summary-card.net-positive::after { background: radial-gradient(circle at 100% 0, rgba(0, 229, 160, .11), transparent 43%); }.report-summary-card.loss::after, .report-summary-card.net-negative::after { background: radial-gradient(circle at 100% 0, rgba(255, 77, 106, .12), transparent 43%); }
+.report-summary-top { display: flex; position: relative; z-index: 1; align-items: center; justify-content: space-between; }.report-summary-top > span { margin: 0; }
+.report-summary-icon { display: grid; place-items: center; width: 35px; height: 35px; border-radius: 10px; color: var(--blue); background: var(--blue-dim); }.report-summary-card.profit .report-summary-icon, .report-summary-card.net-positive .report-summary-icon { color: var(--green); background: var(--green-dim); }.report-summary-card.loss .report-summary-icon, .report-summary-card.net-negative .report-summary-icon { color: var(--red); background: var(--red-dim); }
+.report-summary-card strong { position: relative; z-index: 1; margin-top: 17px; font-size: 26px; letter-spacing: -1px; }.report-summary-card.net-positive strong { color: var(--green); }.report-summary-card.net-negative strong { color: var(--red); }.report-summary-card small { display: block; position: relative; z-index: 1; margin-top: 8px; color: var(--text-3); font-size: 12px; }
+.reports-lock-notice { border-color: rgba(245, 166, 35, .23); background: linear-gradient(90deg, rgba(245, 166, 35, .09), rgba(12, 16, 24, .8)); }
+.reports-table-card { overflow: hidden; }.reports-table-title { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid var(--border); background: linear-gradient(90deg, rgba(79, 143, 255, .075), transparent 46%); }.reports-table-title h3 { margin: 0; font-size: 15px; }.reports-table-title p { margin: 5px 0 0; color: var(--text-3); font-size: 12px; }.reports-table-title > svg { color: var(--green); }
+.reports-table { min-width: 840px; }.reports-table th { padding: 13px 18px; background: rgba(6, 8, 16, .43); }.reports-table td { padding: 15px 18px; }.reports-table tbody tr { transition: background .18s ease; }.reports-table tbody tr:hover { background: rgba(79, 143, 255, .045); }.report-month span { display: block; color: var(--text); font-weight: 800; }.report-month small { display: block; margin-top: 4px; color: var(--text-3); font-size: 11px; }.report-transaction-count { display: grid; place-items: center; width: 30px; height: 30px; border: 1px solid var(--border-2); border-radius: 9px; color: var(--text); background: var(--surface-2); font-size: 12px; font-weight: 800; }.report-lock-button { min-width: 132px; justify-content: center; }
+
+@media (max-width: 700px) {
+  .report-summary-grid { grid-template-columns: 1fr; }.reports-heading { align-items: flex-start; flex-direction: column; }
+}
+
+/* Investment portfolio */
+.investment-heading { margin-bottom: 22px; }
+.investment-add-button { display: inline-flex; align-items: center; gap: 8px; min-height: 42px; padding: 0 17px; }
+.investment-summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 18px; }
+.investment-summary-card { min-height: 142px; padding: 19px; border: 1px solid var(--border); border-radius: 15px; background: linear-gradient(145deg, rgba(17, 22, 32, .96), rgba(12, 16, 24, .96)); position: relative; overflow: hidden; }
+.investment-summary-card::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle at 100% 0, rgba(79, 143, 255, .11), transparent 43%); }
+.investment-summary-card.gain::after, .investment-summary-card.roi-gain::after { background: radial-gradient(circle at 100% 0, rgba(0, 229, 160, .12), transparent 43%); }
+.investment-summary-card.loss::after, .investment-summary-card.roi-loss::after { background: radial-gradient(circle at 100% 0, rgba(255, 77, 106, .12), transparent 43%); }
+.investment-summary-top { display: flex; justify-content: space-between; align-items: center; color: var(--text-3); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.investment-summary-icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 11px; background: var(--blue-dim); color: var(--blue); }
+.investment-summary-card.value .investment-summary-icon { color: var(--purple); background: rgba(167, 139, 250, .13); }
+.investment-summary-card.gain .investment-summary-icon, .investment-summary-card.roi-gain .investment-summary-icon { color: var(--green); background: var(--green-dim); }
+.investment-summary-card.loss .investment-summary-icon, .investment-summary-card.roi-loss .investment-summary-icon { color: var(--red); background: var(--red-dim); }
+.investment-summary-card strong { display: block; position: relative; z-index: 1; margin-top: 17px; color: var(--text); font-size: 25px; letter-spacing: -1px; }
+.investment-summary-card.gain strong, .investment-summary-card.roi-gain strong { color: var(--green); }
+.investment-summary-card.loss strong, .investment-summary-card.roi-loss strong { color: var(--red); }
+.investment-summary-card small { display: block; position: relative; z-index: 1; margin-top: 8px; color: var(--text-3); font-size: 12px; }
+.investment-filter-panel { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 15px 18px; margin-bottom: 18px; border: 1px solid var(--border); border-radius: 14px; background: rgba(12, 16, 24, .72); }
+.investment-filter-panel .eyebrow { display: block; font-size: 10px; }
+.investment-filter-panel p { margin: 5px 0 0; color: var(--text-2); font-size: 13px; font-weight: 600; }
+.investment-filter-chips { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.investment-filter { border: 1px solid var(--border-2); border-radius: 999px; padding: 8px 13px; color: var(--text-2); background: var(--surface-2); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; transition: .2s ease; }
+.investment-filter:hover { color: var(--text); border-color: var(--blue); }
+.investment-filter.active { color: #dbeafe; background: var(--blue-dim); border-color: var(--blue); box-shadow: inset 0 0 0 1px rgba(79, 143, 255, .18); }
+.investment-holdings-card { overflow: hidden; border: 1px solid var(--border); border-radius: 15px; background: var(--surface); }
+.investment-holdings-header { display: flex; align-items: center; justify-content: space-between; padding: 19px 21px; border-bottom: 1px solid var(--border); background: linear-gradient(90deg, rgba(79, 143, 255, .07), transparent 46%); }
+.investment-holdings-header h3 { margin: 0; font-size: 15px; }
+.investment-holdings-header p { margin: 5px 0 0; color: var(--text-3); font-size: 12px; }
+.investment-holdings-value { color: var(--green); font-size: 16px; font-weight: 800; }
+.investment-table-scroll { overflow-x: auto; }
+.investment-table { width: 100%; min-width: 920px; border-collapse: collapse; }
+.investment-table th { padding: 13px 17px; color: var(--text-3); background: rgba(6, 8, 16, .45); font-size: 10px; font-weight: 800; letter-spacing: .08em; text-align: left; text-transform: uppercase; }
+.investment-table td { padding: 16px 17px; border-top: 1px solid rgba(30, 39, 56, .8); font-size: 13px; }
+.investment-table tbody tr { transition: background .18s ease; }
+.investment-table tbody tr:hover { background: rgba(79, 143, 255, .045); }
+.investment-name, .investment-money { color: var(--text); font-weight: 750; }
+.investment-date, .investment-note { color: var(--text-2); }
+.investment-note { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+.investment-type-badge { display: inline-flex; border: 1px solid; border-radius: 999px; padding: 5px 9px; font-size: 11px; font-weight: 800; white-space: nowrap; }
+.investment-positive { color: var(--green); font-weight: 800; }
+.investment-negative { color: var(--red); font-weight: 800; }
+.investment-actions-heading { text-align: center !important; }
+.investment-actions { display: flex; justify-content: center; gap: 8px; }
+.investment-empty { padding: 54px 20px !important; color: var(--text-3); text-align: center; }
+.investment-empty svg { display: block; margin: 0 auto 12px; opacity: .45; }
+.investment-note-field { display: block; margin-top: 15px; }
+.investment-note-field input { width: 100%; margin-top: 7px; }
+.investment-modal { max-width: 560px; }
+@media (max-width: 1050px) { .investment-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .investment-filter-panel { align-items: flex-start; flex-direction: column; } .investment-filter-chips { justify-content: flex-start; } }
+@media (max-width: 650px) { .investment-summary-grid { grid-template-columns: 1fr; } .investment-heading .investment-add-button { width: 100%; justify-content: center; } .investment-holdings-header { align-items: flex-start; gap: 10px; flex-direction: column; } }
+
+/* Profit and loss */
+.pl-page { padding-top: 28px; }
+.pl-page-header, .pl-calendar-toolbar { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; }
+.pl-page-header { margin-bottom: 20px; }
+.pl-page-header h1 { margin: 7px 0; font-size: 30px; letter-spacing: -1.3px; }
+.pl-page-header p, .pl-calendar-toolbar p { margin: 0; color: var(--text-3); font-size: 13px; }
+.pl-period-control, .pl-calendar-controls { display: flex; align-items: center; gap: 9px; }
+.pl-page .period-selector { min-height: 40px; border: 1px solid var(--border-2); border-radius: 10px; padding: 0 34px 0 13px; background: var(--surface-2); color: var(--text); font: inherit; font-size: 13px; font-weight: 700; }
+.pl-summary-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.pl-summary-card { position: relative; overflow: hidden; min-height: 134px; padding: 19px; border: 1px solid var(--border); border-radius: 15px; background: linear-gradient(145deg, var(--surface-2), var(--surface)); }
+.pl-summary-card::before { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 3px; }
+.pl-summary-card.profit-card::before { background: var(--green); }.pl-summary-card.loss-card::before { background: var(--red); }.pl-summary-card.cost-card::before { background: var(--amber); }
+.pl-summary-card .stat-card-top { margin-bottom: 16px; }.pl-summary-card .stat-value { font-size: 26px; }.pl-summary-card .stat-icon { width: 36px; height: 36px; }.pl-summary-card .stat-icon.profit { color: var(--green); background: var(--green-dim); }.pl-summary-card .stat-icon.loss { color: var(--red); background: var(--red-dim); }.pl-summary-card .stat-icon.cost { color: var(--amber); background: var(--amber-dim); }
+.pl-summary-card .stat-value.cost { color: var(--amber); }.pl-summary-card .stat-trend.neutral { color: var(--text-3); }
+.pl-calendar-section { margin-top: 20px; padding: 20px; border: 1px solid var(--border); border-radius: 16px; background: linear-gradient(145deg, rgba(17, 22, 32, .9), rgba(12, 16, 24, .95)); }
+.pl-calendar-toolbar { margin-bottom: 18px; }.pl-calendar-toolbar h2 { margin: 7px 0 5px; font-size: 19px; letter-spacing: -.4px; }
+.pl-calendar-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 18px; }
+.pl-month-card { border-color: var(--border); border-radius: 13px; background: var(--surface); box-shadow: none; }.pl-month-card:hover { transform: none; border-color: var(--border-2); box-shadow: none; }
+.pl-month-card .calendar-card-header { padding: 15px 18px; background: rgba(6, 8, 16, .28); border-bottom-color: var(--border); }.pl-month-card .calendar-card-title { gap: 10px; }.pl-month-card .calendar-card-title svg { width: 34px; height: 34px; padding: 8px; color: var(--blue); background: var(--blue-dim); border-color: transparent; }.pl-month-card .calendar-card-title h3 { font-size: 16px; font-weight: 750; }
+.pl-month-card .calendar-card-content { padding: 15px 18px 18px; background: transparent; }.pl-month-card .calendar-day-headers, .pl-month-card .calendar-days-grid { gap: 5px; }.pl-month-card .calendar-day-header { padding: 6px 2px; color: var(--text-3); background: transparent; border: 0; font-size: 10px; }.pl-month-card .calendar-day-cell { aspect-ratio: auto; min-height: 62px; height: 62px; border-radius: 8px; background: rgba(255,255,255,.018); border-color: rgba(39,49,69,.7); }.pl-month-card .calendar-day-cell.neutral { background: rgba(94,107,128,.07); border-color: rgba(94,107,128,.25); }.pl-month-card .calendar-day-cell.profit { background: linear-gradient(145deg, rgba(0,229,160,.16), rgba(0,196,138,.06)); border-color: rgba(0,229,160,.32); }.pl-month-card .calendar-day-cell.loss { background: linear-gradient(145deg, rgba(255,77,106,.17), rgba(255,77,106,.06)); border-color: rgba(255,77,106,.34); }.pl-month-card .calendar-day-cell:hover:not(.invisible) { transform: translateY(-2px); box-shadow: 0 7px 18px rgba(0,0,0,.25); }.pl-month-card .calendar-day-cell .day-number { color: var(--text); }.pl-month-card .calendar-day-cell .day-amount { margin-top: 4px; font-size: 10px; }.pl-month-card .calendar-day-cell.today { border-color: var(--blue) !important; box-shadow: 0 0 0 2px var(--blue-dim) !important; }
+@media (max-width: 760px) { .pl-page-header, .pl-calendar-toolbar { align-items: flex-start; flex-direction: column; }.pl-period-control, .pl-calendar-controls { width: 100%; flex-wrap: wrap; }.pl-calendar-controls .calendar-legend { width: auto; }.pl-summary-grid { grid-template-columns: 1fr; }.pl-calendar-section { padding: 15px; }.pl-calendar-grid { grid-template-columns: 1fr; }.pl-month-card .calendar-card-content { padding: 13px; }.pl-month-card .calendar-day-cell { min-height: 48px; height: 48px; } }
+
+/* P&L heatmap: the stronger the daily result, the stronger its colour. */
+.pl-month-card .calendar-day-cell.profit.strength-1 { background: rgba(0, 229, 160, .08); border-color: rgba(0, 229, 160, .2); }
+.pl-month-card .calendar-day-cell.profit.strength-2 { background: rgba(0, 229, 160, .14); border-color: rgba(0, 229, 160, .32); }
+.pl-month-card .calendar-day-cell.profit.strength-3 { background: linear-gradient(145deg, rgba(0, 229, 160, .24), rgba(0, 196, 138, .12)); border-color: rgba(0, 229, 160, .48); box-shadow: inset 0 0 20px rgba(0, 229, 160, .07); }
+.pl-month-card .calendar-day-cell.profit.strength-4 { background: linear-gradient(145deg, rgba(0, 229, 160, .36), rgba(0, 196, 138, .19)); border-color: rgba(0, 229, 160, .7); box-shadow: inset 0 0 26px rgba(0, 229, 160, .14), 0 0 14px rgba(0, 229, 160, .08); }
+.pl-month-card .calendar-day-cell.loss.strength-1 { background: rgba(255, 77, 106, .08); border-color: rgba(255, 77, 106, .2); }
+.pl-month-card .calendar-day-cell.loss.strength-2 { background: rgba(255, 77, 106, .14); border-color: rgba(255, 77, 106, .32); }
+.pl-month-card .calendar-day-cell.loss.strength-3 { background: linear-gradient(145deg, rgba(255, 77, 106, .24), rgba(255, 77, 106, .12)); border-color: rgba(255, 77, 106, .48); box-shadow: inset 0 0 20px rgba(255, 77, 106, .07); }
+.pl-month-card .calendar-day-cell.loss.strength-4 { background: linear-gradient(145deg, rgba(255, 77, 106, .36), rgba(255, 77, 106, .19)); border-color: rgba(255, 77, 106, .7); box-shadow: inset 0 0 26px rgba(255, 77, 106, .14), 0 0 14px rgba(255, 77, 106, .08); }

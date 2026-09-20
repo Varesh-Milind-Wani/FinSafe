@@ -10,13 +10,14 @@ import type {
 } from "../types/finance";
 import TransactionTable from "../components/TransactionTable";
 import { exportFinanceToExcel, importFinanceFromExcel } from "../utils/excel";
+import type { FinanceImport } from "../utils/excel";
 
 interface Props {
   user: UserAccount;
   onAdd: () => void;
   onDelete: (id: string) => void;
   onEdit: (transaction: Transaction) => void;
-  onImport?: (transactions: Transaction[]) => void;
+  onImport?: (backup: FinanceImport) => { imported: number; skipped: number; otherRecords: number };
 }
 
 const Transactions = ({
@@ -39,11 +40,17 @@ const Transactions = ({
 
     setImporting(true);
     try {
-      const transactions = await importFinanceFromExcel(file);
-      if (onImport) {
-        onImport(transactions);
-      }
-      alert(`Successfully imported ${transactions.length} transactions!`);
+      const backup = await importFinanceFromExcel(file);
+      const result = onImport?.(backup) ?? {
+        imported: backup.transactions.length,
+        skipped: 0,
+        otherRecords: 0,
+      };
+      alert(
+        result.skipped > 0
+          ? `Restored ${result.imported} transactions and ${result.otherRecords} other finance records. ${result.skipped} transaction${result.skipped === 1 ? " was" : "s were"} skipped because their month is locked. Unlock the month in Reports to import them.`
+          : `Successfully restored ${result.imported} transactions and ${result.otherRecords} other finance records.`,
+      );
     } catch (error) {
       alert(`Import failed: ${error instanceof Error ? error.message : "Unknown error"}`);
     } finally {

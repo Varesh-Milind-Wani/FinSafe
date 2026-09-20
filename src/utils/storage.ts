@@ -53,7 +53,11 @@ const normalizeUser = (user: UserAccount): UserAccount => ({
           (expense) => Boolean(expense) && typeof expense.id === "string" && Number.isFinite(expense.amount)
         )
       : [];
-    return { defaultCostSchedules: schedules, transactions, expenses };
+    const lockedMonths = Array.isArray(user.lockedMonths)
+      ? [...new Set(user.lockedMonths.filter((month) => /^\d{4}-(0[1-9]|1[0-2])$/.test(month)))]
+      : [];
+
+    return { defaultCostSchedules: schedules, transactions, expenses, lockedMonths };
   })(),
   name: user.name ?? "",
   email: user.email ?? "",

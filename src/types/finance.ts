@@ -72,6 +72,8 @@ export interface UserAccount {
   expenseIncludedByDefault: boolean;
   createdAt: string;
   transactions: Transaction[];
+  /** Calendar months (YYYY-MM) whose transactions can no longer be changed. */
+  lockedMonths?: string[];
   /** Tracks manual balance adjustments */
   currentBalance?: number;
   /** Persistent rebalance offset applied on top of transaction performance. */

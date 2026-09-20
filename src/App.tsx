@@ -14,6 +14,7 @@ import Withdrawals from "./pages/Withdrawals";
 import Chat from "./pages/Chat";
 import InvestmentPage from "./pages/Investment";
 import Expenses from "./pages/Expenses";
+import Reports from "./pages/Reports";
 
 import {
   addStorageChangeListener,
@@ -22,11 +23,17 @@ import {
   updateUser,
 } from "./utils/storage";
 import { calculateCurrentBalance } from "./utils/balance";
+import { getMonthKey, getMonthLabel, isTransactionMonthLocked } from "./utils/monthLocks";
 
 import type {
   Transaction,
   UserAccount,
 } from "./types/finance";
+
+const mergeById = <T extends { id: string }>(existing: T[], imported: T[]): T[] => {
+  const importedIds = new Set(imported.map((item) => item.id));
+  return [...imported, ...existing.filter((item) => !importedIds.has(item.id))];
+};
 
 const App = () => {
   const [user, setUser] =
@@ -36,7 +43,7 @@ const App = () => {
 
   const [activePage, setActivePage] =
     useState<
-      "dashboard" | "transactions" | "analytics" | "profitloss" | "withdrawals" | "settings" | "chat" | "investment" | "expenses"
+      "dashboard" | "transactions" | "analytics" | "profitloss" | "reports" | "withdrawals" | "settings" | "chat" | "investment" | "expenses"
     >("dashboard");
 
   const [modalOpen, setModalOpen] =
@@ -78,9 +85,20 @@ const App = () => {
   const handleSaveTransaction = (
     transaction: Transaction
   ) => {
-    const transactionExists = user.transactions.some(
-      (item) => item.id === transaction.id
-    );
+    const existingTransaction = user.transactions.find((item) => item.id === transaction.id);
+    const transactionExists = Boolean(existingTransaction);
+    const lockedMonths = user.lockedMonths ?? [];
+
+    if (
+      isTransactionMonthLocked(transaction, lockedMonths) ||
+      (existingTransaction && isTransactionMonthLocked(existingTransaction, lockedMonths))
+    ) {
+      const lockedMonthKey = isTransactionMonthLocked(transaction, lockedMonths)
+        ? getMonthKey(transaction.date)
+        : getMonthKey(existingTransaction!.date);
+      alert(`${getMonthLabel(lockedMonthKey)} is locked. Unlock that month in Reports before changing its transactions.`);
+      return;
+    }
 
     const nextTransactions = transactionExists
       ? user.transactions.map((item) =>
@@ -109,6 +127,12 @@ const App = () => {
   const handleDeleteTransaction = (
     id: string
   ) => {
+    const transaction = user.transactions.find((item) => item.id === id);
+    if (transaction && isTransactionMonthLocked(transaction, user.lockedMonths)) {
+      alert(`${getMonthLabel(getMonthKey(transaction.date))} is locked. Unlock that month in Reports before deleting this transaction.`);
+      return;
+    }
+
     const confirmed =
       window.confirm(
         "Are you sure you want to delete this transaction?"
@@ -138,6 +162,10 @@ const App = () => {
   const handleEditTransaction = (
     transaction: Transaction
   ) => {
+    if (isTransactionMonthLocked(transaction, user.lockedMonths)) {
+      alert(`${getMonthLabel(getMonthKey(transaction.date))} is locked. Unlock that month in Reports before editing this transaction.`);
+      return;
+    }
     setEditingTransaction(transaction);
     setModalOpen(true);
   };
@@ -154,10 +182,12 @@ const App = () => {
       | "transactions"
       | "analytics"
       | "profitloss"
+      | "reports"
       | "withdrawals"
       | "settings"
       | "chat"
       | "investment"
+      | "expenses"
   ) => {
     setActivePage(page);
     setMobileMenuOpen(false);
@@ -197,6 +227,7 @@ const App = () => {
                 : activePage === "transactions" ? "Transactions"
                 : activePage === "analytics" ? "Analytics"
                 : activePage === "profitloss" ? "P&L"
+                : activePage === "reports" ? "Reports"
                 : activePage === "withdrawals" ? "Withdrawals"
                 : activePage === "chat" ? "Chat Assistant"
                 : activePage === "investment" ? "Investment"
@@ -209,6 +240,7 @@ const App = () => {
                 : activePage === "transactions" ? "Transaction records"
                 : activePage === "analytics" ? "Analytics"
                 : activePage === "profitloss" ? "Profit & Loss Analysis"
+                : activePage === "reports" ? "Monthly Reports"
                 : activePage === "withdrawals" ? "Withdrawals"
                 : activePage === "chat" ? "Chat Assistant"
                 : activePage === "investment" ? "Investment Portfolio"
@@ -234,10 +266,33 @@ const App = () => {
             }}
             onDelete={handleDeleteTransaction}
             onEdit={handleEditTransaction}
-            onImport={(importedTransactions) => {
+            onImport={(backup) => {
+              const importedTransactions = backup.transactions;
+              const existingTransactions = new Map(
+                user.transactions.map((transaction) => [transaction.id, transaction]),
+              );
+              const unlockedTransactions = importedTransactions.filter(
+                (transaction) => {
+                  const existingTransaction = existingTransactions.get(transaction.id);
+                  return !isTransactionMonthLocked(transaction, user.lockedMonths)
+                    && !isTransactionMonthLocked(existingTransaction ?? transaction, user.lockedMonths);
+                },
+              );
+              const importedIds = new Set(unlockedTransactions.map((transaction) => transaction.id));
               const transactionsUpdatedUser: UserAccount = {
                 ...user,
-                transactions: [...importedTransactions, ...user.transactions],
+                // Exported IDs are stable. Replace matching open records instead
+                // of creating duplicate rows when a backup is imported twice.
+                transactions: [
+                  ...unlockedTransactions,
+                  ...user.transactions.filter((transaction) => !importedIds.has(transaction.id)),
+                ],
+                investments: mergeById(user.investments ?? [], backup.investments),
+                expenses: mergeById(user.expenses ?? [], backup.expenses),
+                withdrawals: mergeById(user.withdrawals ?? [], backup.withdrawals),
+                defaultCostSchedules: mergeById(user.defaultCostSchedules ?? [], backup.defaultCostSchedules),
+                lockedMonths: [...new Set([...(user.lockedMonths ?? []), ...backup.lockedMonths])],
+                ...(backup.settings ?? {}),
               };
               const updatedUser: UserAccount = {
                 ...transactionsUpdatedUser,
@@ -245,12 +300,33 @@ const App = () => {
               };
               updateUser(updatedUser);
               setUser(updatedUser);
+              return {
+                imported: unlockedTransactions.length,
+                skipped: importedTransactions.length - unlockedTransactions.length,
+                otherRecords: backup.investments.length + backup.expenses.length + backup.withdrawals.length + backup.defaultCostSchedules.length,
+              };
             }}
           />
         ) : activePage === "analytics" ? (
           <Analytics user={user} />
         ) : activePage === "profitloss" ? (
           <ProfitLoss user={user} />
+        ) : activePage === "reports" ? (
+          <Reports
+            user={user}
+            onToggleMonthLock={(monthKey) => {
+              const lockedMonths = user.lockedMonths ?? [];
+              const isLocked = lockedMonths.includes(monthKey);
+              const updatedUser = {
+                ...user,
+                lockedMonths: isLocked
+                  ? lockedMonths.filter((month) => month !== monthKey)
+                  : [...lockedMonths, monthKey],
+              };
+              updateUser(updatedUser);
+              setUser(updatedUser);
+            }}
+          />
         ) : activePage === "withdrawals" ? (
           <Withdrawals
             user={user}

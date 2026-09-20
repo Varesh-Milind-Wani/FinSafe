@@ -78,6 +78,12 @@ const generateCalendarDays = (month: Date, transactions: Transaction[]) => {
       transactionsByDate[dateKey].transactions.push(transaction);
     }
   });
+
+  // Use a separate scale for gains and losses so the calendar becomes a
+  // readable heatmap: larger amounts receive a stronger colour treatment.
+  const dailyTotals = Object.values(transactionsByDate).map((data) => data.profit - data.loss);
+  const largestProfit = Math.max(0, ...dailyTotals.filter((total) => total > 0));
+  const largestLoss = Math.max(0, ...dailyTotals.filter((total) => total < 0).map(Math.abs));
   
   // Generate 42 days (6 weeks) for proper calendar layout
   for (let i = 0; i < 42; i++) {
@@ -92,6 +98,7 @@ const generateCalendarDays = (month: Date, transactions: Transaction[]) => {
     
     let dayType = 'neutral';
     let amount = null;
+    let intensity = 0;
     let tooltip = current.toLocaleDateString('en-US', { 
       weekday: 'long', 
       year: 'numeric', 
@@ -104,10 +111,12 @@ const generateCalendarDays = (month: Date, transactions: Transaction[]) => {
       if (netAmount > 0) {
         dayType = 'profit';
         amount = netAmount;
+        intensity = Math.max(1, Math.ceil((netAmount / largestProfit) * 4));
         tooltip = `${tooltip}\nProfit: ₹${dayData.profit.toLocaleString()}\nLoss: ₹${dayData.loss.toLocaleString()}\nNet: +₹${netAmount.toLocaleString()}`;
       } else if (netAmount < 0) {
         dayType = 'loss';
         amount = Math.abs(netAmount);
+        intensity = Math.max(1, Math.ceil((Math.abs(netAmount) / largestLoss) * 4));
         tooltip = `${tooltip}\nProfit: ₹${dayData.profit.toLocaleString()}\nLoss: ₹${dayData.loss.toLocaleString()}\nNet: -₹${Math.abs(netAmount).toLocaleString()}`;
       } else if (dayData.profit > 0 || dayData.loss > 0) {
         dayType = 'neutral';
@@ -120,6 +129,7 @@ const generateCalendarDays = (month: Date, transactions: Transaction[]) => {
       day: current.getDate(),
       type: dayType,
       amount: amount,
+      intensity,
       isEmpty: !isCurrentMonth,
       tooltip: tooltip,
       hasData: !!dayData,
@@ -193,15 +203,15 @@ const ProfitLoss = ({ user }: Props) => {
   }, [filteredTransactions, user]);
 
   return (
-    <div className="page-content">
-      <div className="dashboard-header">
+    <div className="page-content pl-page">
+      <div className="pl-page-header">
         <div>
           <span className="eyebrow">P&L ANALYSIS</span>
           <h1>Profit & Loss Analysis</h1>
           <p>Comprehensive view of your trading performance and profitability.</p>
         </div>
         
-        <div className="dashboard-actions">
+        <div className="pl-period-control">
           <select 
             value={selectedPeriod} 
             onChange={(e) => setSelectedPeriod(e.target.value)}
@@ -217,8 +227,8 @@ const ProfitLoss = ({ user }: Props) => {
       </div>
 
       {/* P&L Overview Cards - Profit, Loss & Cost */}
-      <div className="stats-grid-three">
-        <div className="stat-card">
+      <div className="pl-summary-grid">
+        <div className="pl-summary-card profit-card">
           <div className="stat-card-top">
             <div className="stat-icon profit">
               <TrendingUp size={19} />
@@ -229,7 +239,7 @@ const ProfitLoss = ({ user }: Props) => {
           <div className="stat-trend positive">{stats.profitCount} profitable trades</div>
         </div>
 
-        <div className="stat-card">
+        <div className="pl-summary-card loss-card">
           <div className="stat-card-top">
             <div className="stat-icon loss">
               <TrendingDown size={19} />
@@ -240,7 +250,7 @@ const ProfitLoss = ({ user }: Props) => {
           <div className="stat-trend negative">{stats.lossCount} losing trades</div>
         </div>
 
-        <div className="stat-card">
+        <div className="pl-summary-card cost-card">
           <div className="stat-card-top">
             <div className="stat-icon cost">
               <DollarSign size={19} />
@@ -253,14 +263,14 @@ const ProfitLoss = ({ user }: Props) => {
       </div>
 
       {/* Trading Calendar - Dashboard Style */}
-      <div className="dashboard-section">
-        <div className="dashboard-header">
+      <section className="pl-calendar-section">
+        <div className="pl-calendar-toolbar">
           <div>
             <span className="eyebrow">TRADING CALENDAR</span>
             <h2>Daily Performance Overview</h2>
             <p>{filteredTransactions.length} transactions in the selected period</p>
           </div>
-          <div className="dashboard-actions">
+          <div className="pl-calendar-controls">
             <div className="calendar-legend" aria-label="Calendar legend">
               <span><i className="profit-dot" /> Profit</span>
               <span><i className="loss-dot" /> Loss</span>
@@ -279,13 +289,13 @@ const ProfitLoss = ({ user }: Props) => {
           </div>
         </div>
         
-        <div className="calendar-dashboard-grid">
+        <div className="pl-calendar-grid">
           {Array.from({ length: calendarMonths }, (_, monthOffset) => {
             const currentMonth = new Date();
             currentMonth.setMonth(currentMonth.getMonth() - monthOffset);
             
             return (
-              <div key={monthOffset} className="calendar-card">
+              <div key={monthOffset} className="calendar-card pl-month-card">
                 <div className="calendar-card-header">
                   <div className="calendar-card-title">
                     <Calendar size={20} />
@@ -305,7 +315,7 @@ const ProfitLoss = ({ user }: Props) => {
                       day.isVisible ? (
                         <div 
                           key={index} 
-                          className={`calendar-day-cell ${day.type} ${day.isEmpty ? 'empty' : ''} ${day.isToday ? 'today' : ''}`}
+                          className={`calendar-day-cell ${day.type} strength-${day.intensity} ${day.isEmpty ? 'empty' : ''} ${day.isToday ? 'today' : ''}`}
                           title={day.tooltip}
                           aria-label={day.tooltip}
                         >
@@ -322,7 +332,7 @@ const ProfitLoss = ({ user }: Props) => {
             );
           })}
         </div>
-      </div>
+      </section>
 
     </div>
   );

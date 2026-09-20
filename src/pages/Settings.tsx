@@ -18,6 +18,7 @@ import type { DefaultCostSchedule, UserAccount } from "../types/finance";
 import { formatCurrency } from "../utils/money";
 import { calculateCurrentBalance, getAuthoritativeBalance } from "../utils/balance";
 import { addSampleTradesToUser } from "../utils/storage";
+import { isTransactionMonthLocked } from "../utils/monthLocks";
 
 const getCostForDate = (
   date: string,
@@ -33,8 +34,10 @@ const getCostForDate = (
 const recalculateTransactions = (
   transactions: UserAccount["transactions"],
   schedules: DefaultCostSchedule[],
-  fallbackCost = 0
+  fallbackCost = 0,
+  lockedMonths: string[] = [],
 ) => transactions.map((transaction) => {
+  if (isTransactionMonthLocked(transaction, lockedMonths)) return transaction;
   const grossAmount = transaction.grossAmount ?? transaction.amount;
   const costAmount = getCostForDate(transaction.date, schedules, fallbackCost);
   const amount = transaction.type === "profit"
@@ -135,7 +138,8 @@ const Settings = ({ user, onSave }: Props) => {
     const recalculatedTransactions = recalculateTransactions(
       user.transactions,
       schedules,
-      user.defaultCostAmount ?? 0
+      user.defaultCostAmount ?? 0,
+      user.lockedMonths,
     );
     const balanceBeforeManualAdjustment = calculateCurrentBalance({
       ...user,
@@ -206,7 +210,7 @@ const Settings = ({ user, onSave }: Props) => {
     onSave({
       ...user,
       defaultCostSchedules: nextSchedules,
-      transactions: recalculateTransactions(user.transactions, nextSchedules),
+      transactions: recalculateTransactions(user.transactions, nextSchedules, user.defaultCostAmount ?? 0, user.lockedMonths),
     });
     setScheduleName("");
     setScheduleDate("");
@@ -241,7 +245,7 @@ const Settings = ({ user, onSave }: Props) => {
     onSave({
       ...user,
       defaultCostSchedules: nextSchedules,
-      transactions: recalculateTransactions(user.transactions, nextSchedules),
+      transactions: recalculateTransactions(user.transactions, nextSchedules, user.defaultCostAmount ?? 0, user.lockedMonths),
     });
   };
 
